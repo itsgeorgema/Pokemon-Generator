@@ -24,8 +24,8 @@ merged_df = pd.DataFrame(merged_data)
 
 print(merged_df)
 
-"""import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
-image = mpimg.imread(f'{merged_df.get("image_path").loc[2343]}')
-plt.imshow(image)
-plt.show()"""
+#import matplotlib.pyplot as plt
+#import matplotlib.image as mpimg
+#image = mpimg.imread(f'{merged_df.get("image_path").loc[2343]}')
+#plt.imshow(image)
+#plt.show()
