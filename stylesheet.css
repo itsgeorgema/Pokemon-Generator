@@ -5,9 +5,14 @@ body{
     background-color: rgb(220, 220, 100);
 }
 body h1{
-    color: black;
-    border-color: azure;
-    border-width: 5px;
+    color: rgb(0, 0, 0);
+    text-shadow:
+        2px 2px 0 rgb(255, 255, 255),
+       -2px 2px 0 rgb(255, 255, 255),
+        2px -2px 0 rgb(255, 255, 255),
+       -2px -2px 0 rgb(255, 255, 255);
+    margin: 80px;
+    font-size: 3em;
 }
 form{
     display: flex;
@@ -36,9 +41,9 @@ button:hover {
 }
 
 .result .result_container{
-    margin: 30px auto;
-    padding: 20px;
-    max-width: 500px;
+    margin: 50px auto;
+    padding: 50px;
+    width: 80%;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     text-align: left;
