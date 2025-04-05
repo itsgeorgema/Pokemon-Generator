@@ -2,14 +2,14 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score
+from sklearn.ensemble import RandomForestClassifier
+import numpy as np
+
 
 df = pd.read_csv("pokemon_data_pokeapi.csv")
-df['Type2'] = df['Type2'].fillna('None')
+#df['Type2'] = df['Type2'].fillna('None')
 
-#first_ability = [i.split(", ")[0] for i in df['Abilities']]
+df['ability1'] = [i.split(", ")[0] for i in df['Abilities']]
 #print(first_ability)
 
 
@@ -19,36 +19,50 @@ df['Type2'] = df['Type2'].fillna('None')
 #plt.show()
 
 
+#encoding
+type_encoder, ability_encoder = LabelEncoder(), LabelEncoder()
 
-second_encoder = LabelEncoder()
-df['Type2_encoded'] = second_encoder.fit_transform(df['Type2'])
+# Encode 'Source', 'Rock_1', and 'Rock_2' columns
+df['type1_encoded'] = type_encoder.fit_transform(df['Type1'])
+df['ability_encoded'] = ability_encoder.fit_transform(df['ability1'])
 
-first_encoder = LabelEncoder()
-df['Type1_encoded'] = first_encoder.fit_transform(df['Type1'])
+df['Type2'] = df['Type2'].fillna('None')
+df['type2_encoded'] = type_encoder.fit_transform(df['Type2'])
 
-X = df[['Type1_encoded']]
-y = df['Type2_encoded']
+rf = RandomForestClassifier(n_estimators=100, random_state=42)
+rf.fit(df[['type1_encoded', 'type2_encoded']], df['ability_encoded'])
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+rf_type2 = RandomForestClassifier(n_estimators=100, random_state=42)
+rf_type2.fit(df[['type1_encoded', 'ability_encoded']], df['type2_encoded'])
 
-model = LogisticRegression()
-model.fit(X_train, y_train)
-
-y_pred = model.predict(X_test)
-
-accuracy = accuracy_score(y_test, y_pred)
-print(f'Model Accuracy: {accuracy:.2f}')
-
-
-def predict_source(rock_name):
-    first_encoded = first_encoder.transform([rock_name])[0]
+def predict_type2_ability(type1, type2=None):
+    type1_encoded = type_encoder.transform([type1])[0]
     
-    second_encoded = model.predict([[first_encoded]])[0]
+    if type2 is None:
+        predicted_type_encoded = rf_type2.predict([[type1_encoded, 0]])
+        predicted_type_name = type_encoder.inverse_transform(predicted_type_encoded)[0]
+    else:
+        predicted_type_encoded = type_encoder.transform([type2])[0]
+        predicted_type_name = type2
     
-    second_predicted = second_encoder.inverse_transform([second_encoded])[0]
+    predicted_ability_encoded = rf.predict([[type1_encoded, predicted_type_encoded]])
+    predicted_ability_name = ability_encoder.inverse_transform(predicted_ability_encoded)[0]
     
-    return second_predicted
+    return predicted_type_name, predicted_ability_name
 
-type1 = input("Enter the type 1 to predict its type2: ")
-predicted_source = predict_source(type1)
-print(f'The predicted type 2 for {type1} is: {predicted_source}')
+def get_user_input():
+    type1in = input("Enter Type 1: ").strip().capitalize() 
+    type2in = input("Enter Type 2 (or press enter if none): ").strip().capitalize()
+    
+    type2 = type2in if type2in else None
+    
+    return type1in, type2
+
+type1, type2 = get_user_input()
+
+predicted_type2, predicted_ability = predict_type2_ability(type1, type2)
+
+if type2 is None:
+    print(f"Type 1: {type1}, predicted Type 2: {predicted_type2} and predicted ability is: {predicted_ability}")
+else:
+    print(f"Type 1: {type1} and Type 2 : {type2}, predicted ability is: {predicted_ability}")

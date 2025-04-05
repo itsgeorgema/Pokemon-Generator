@@ -3,16 +3,69 @@
     <head>
         <meta charset = "utf-8">
         <title>Pokemon Generator</title>
-        <link rel="stylesheet" href="practice.css">
+        <link rel="stylesheet" href="{{ url_for('Pokemon-Generator', filename='stylesheet.css') }}">
     </head>
     <body>
-        <header>
-            <div class = "container">
+        <h1>Original Pokemon Generator</h1>
+        <div class = "container">
+
+            <form id="typeForm">
+                <label>Type 1:
+                    <select id="type1">
+                        <option value="">--Select--</option>
+                        <option>Normal</option>
+                        <option>Fire</option>
+                        <option>Water</option>
+                        <option>Electric</option>
+                        <option>Grass</option>
+                        <option>Ice</option>
+                        <option>Fighting</option>
+                        <option>Poison</option>
+                        <option>Ground</option>
+                        <option>Flying</option>
+                        <option>Psychic</option>
+                        <option>Bug</option>
+                        <option>Rock</option>
+                        <option>Ghost</option>
+                        <option>Dragon</option>
+                        <option>Dark</option>
+                        <option>Steel</option>
+                        <option>Fairy</option>
+                    </select>
+                </label>
+                <label>Type 2:
+                    <select id="type2">
+                        <option value="">--Select--</option>
+                        <option>Normal</option>
+                        <option>Fire</option>
+                        <option>Water</option>
+                        <option>Electric</option>
+                        <option>Grass</option>
+                        <option>Ice</option>
+                        <option>Fighting</option>
+                        <option>Poison</option>
+                        <option>Ground</option>
+                        <option>Flying</option>
+                        <option>Psychic</option>
+                        <option>Bug</option>
+                        <option>Rock</option>
+                        <option>Ghost</option>
+                        <option>Dragon</option>
+                        <option>Dark</option>
+                        <option>Steel</option>
+                        <option>Fairy</option>
+                    </select>
+                </label>
                 
-            </div>
-        </header>
-        <div class = "wrapper">
+            </form>
+        </div>
+        <div class="generateButton">
+            <button onclick="generatePokemon()">Generate!</button>
+        </div>
+
+        <div class="Result">
 
         </div>
+
     </body>
 </html>
