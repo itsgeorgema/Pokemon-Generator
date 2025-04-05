@@ -3,13 +3,13 @@
     <head>
         <meta charset = "utf-8">
         <title>Pokemon Generator</title>
-        <link rel="stylesheet" href="{{ url_for('Pokemon-Generator', filename='stylesheet.css') }}">
+        <link rel="stylesheet" href="/Users/taishiaizawa/Projects/DataHacks_0405/stylesheet.css">
     </head>
     <body>
         <h1>Original Pokemon Generator</h1>
         <div class = "container">
 
-            <form id="typeForm">
+            <form class="typeForm">
                 <label>Type 1:
                     <select id="type1">
                         <option value="">--Select--</option>
@@ -56,11 +56,8 @@
                         <option>Fairy</option>
                     </select>
                 </label>
-                
+                <button onclick="generatePokemon()">Generate!</button>
             </form>
-        </div>
-        <div class="generateButton">
-            <button onclick="generatePokemon()">Generate!</button>
         </div>
 
         <div class="Result">

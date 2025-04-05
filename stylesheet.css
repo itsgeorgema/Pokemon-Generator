@@ -2,5 +2,27 @@ body{
     margin: 0;
     font-family: "Tahoma", serif;
     text-align: center;
-    background-color: rgb(108, 108, 108);
+    background-color: rgb(215, 215, 215);
+}
+form{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px;
+    border-radius: 12px;
+    background-color: rgb(255, 255, 255);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+button{
+    padding: 12px 20px;
+    font-size: 15px;
+    border-radius: 5px;
+    background-color: #007bff;
+    color:rgb(255, 255, 255);
+    transition: background-color 0.2s ease;
+}
+.container{
+    width: 300px;
+    position: static;
+    margin: auto;
 }
