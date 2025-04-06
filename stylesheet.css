@@ -2,14 +2,24 @@ body{
     margin: 0;
     font-family: "Tahoma", serif;
     text-align: center;
-    background-color: rgb(215, 215, 215);
+    background-color: rgb(220, 220, 100);
+}
+body h1{
+    color: rgb(0, 0, 0);
+    text-shadow:
+        2px 2px 0 rgb(255, 255, 255),
+       -2px 2px 0 rgb(255, 255, 255),
+        2px -2px 0 rgb(255, 255, 255),
+       -2px -2px 0 rgb(255, 255, 255);
+    margin: 80px;
+    font-size: 3em;
 }
 form{
     display: flex;
     flex-direction: column;
     gap: 10px;
     padding: 20px;
-    border-radius: 12px;
+    border-radius: 10px;
     background-color: rgb(255, 255, 255);
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
@@ -21,8 +31,31 @@ button{
     color:rgb(255, 255, 255);
     transition: background-color 0.2s ease;
 }
-.container{
+button:hover {
+    background-color: #0f55a0;
+}
+.info_container{
     width: 300px;
     position: static;
     margin: auto;
+}
+
+.result .result_container{
+    margin: 50px auto;
+    padding: 50px;
+    width: 80%;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    text-align: left;
+    background-color: rgb(255, 255, 255);
+}
+
+.result_container h2{
+    margin-top: 0;
+    font-size: 1.8em;
+}
+
+.result_container p {
+    margin: 6px 0;
+    font-size: 1em;
 }

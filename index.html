@@ -4,12 +4,17 @@
         <meta charset = "utf-8">
         <title>Pokemon Generator</title>
         <link rel="stylesheet" href="/Users/taishiaizawa/Projects/DataHacks_0405/stylesheet.css">
+        <link rel="stylesheet" href="/stylesheet.css">
     </head>
     <body>
         <h1>Original Pokemon Generator</h1>
-        <div class = "container">
-
+        <div class = "info_container">
+            
             <form class="typeForm">
+                
+                <label>Name:
+                    <input type="text" id="pokemonName" placeholder="Enter the name"></label>
+
                 <label>Type 1:
                     <select id="type1">
                         <option value="">--Select--</option>
@@ -60,9 +65,33 @@
             </form>
         </div>
 
-        <div class="Result">
-
+        <div class = "result" id="Result">
+                <div class = "result_container">
+                    <h2>Name here</h2>
+                    <p><strong>Type: </strong></p>
+                    <p><strong>Ability: </strong></p>
+                </div>
+            
         </div>
+
+        <script>
+            function generatePokemon(){
+                event.preventDefault();
+                const type1 = document.getElementById("type1").value;
+                const type2 = document.getElementById("type2").value;
+                if(type1 === type2){
+                    //error
+                    alert("Please select two different types!");
+                    return;
+                }
+                document.getElementById("Result").innerHTML = 
+                `<div class="result_container">
+                    <h2>${document.getElementById("pokemonName").value}</h2>
+                    <p><strong>Type: </strong>${document.getElementById("type1").value} & ${document.getElementById("type2").value}</p>
+                    <p><strong>Ability: </strong>New Ability</p>
+                </div>`;
+            }
+        </script>
 
     </body>
 </html>
