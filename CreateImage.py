@@ -40,7 +40,7 @@ def generate_image(generator, condition,z_dim=100):
     with torch.no_grad():
         fake_img=generator(z,condition)
     return fake_img[0].permute(1, 2, 0).cpu().numpy()*.5+.5
-    def generate_and_save_image(type1, type2, height, weight, generation, legendary, output_path="static/generated/image.png"):
+def generate_and_save_image(type1, type2, height, weight, generation, legendary, output_path="static/generated/image.png"):
     z_dim = 100
     condition_dim = len(one_hot_type("Fire")) * 2 + 4
     generator = Generator(z_dim=z_dim, condition_dim=condition_dim)
