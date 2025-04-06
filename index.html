@@ -3,10 +3,13 @@
     <head>
         <meta charset = "utf-8">
         <title>Pokemon Generator</title>
-        <link rel="stylesheet" href="/stylesheet.css">
+        <link rel="stylesheet" href="{{ url_for('static', filename='stylesheet.css') }}">
     </head>
     <body>
-        <h1>Original Pokemon Generator</h1>
+        <!--<h1>Original Pokemon Generator</h1>-->
+        <div class="header">
+            <p>Original Pokemon Generator</p>
+        </div>
         <div class = "info_container">
             
             <form class="typeForm">
@@ -65,12 +68,20 @@
         </div>
 
         <div class = "result" id="Result">
+            <!--
                 <div class = "result_container">
-                    <h2>Name here</h2>
-                    <p><strong>Type: </strong></p>
-                    <p><strong>Ability: </strong></p>
+                    <div class = "content">
+                        <div class = "info">
+                            <h2>Name here</h2>
+                            <p><strong>Type: </strong></p>
+                            <p><strong>Ability: </strong></p>
+                        </div>
+                        <div class = "picture">
+
+                        </div>
+                    </div>
                 </div>
-            
+            -->
         </div>
 
         <script>
@@ -78,17 +89,48 @@
                 event.preventDefault();
                 const type1 = document.getElementById("type1").value;
                 const type2 = document.getElementById("type2").value;
+                let type = "";
+
                 if(type1 === type2){
                     //error
                     alert("Please select two different types!");
                     return;
                 }
-                document.getElementById("Result").innerHTML = 
-                `<div class="result_container">
-                    <h2>${document.getElementById("pokemonName").value}</h2>
-                    <p><strong>Type: </strong>${document.getElementById("type1").value} & ${document.getElementById("type2").value}</p>
-                    <p><strong>Ability: </strong>New Ability</p>
-                </div>`;
+
+                fetch("/generate",{
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({type1, type2})
+                })
+                .then(response => response.json())
+
+                .then(data => {
+                    if(type1 === "None"){
+                        type = type2;
+                    } else if (type2 === "None"){
+                        type = type1;
+                    } else {
+                        type = `${type1} & ${type2}`;
+                    }
+
+                    document.getElementById("Result").innerHTML = 
+                    `<div class="result_container">
+                        <div class = "content">
+                            <div class = "info">
+                                <h2>${document.getElementById("pokemonName").value}</h2>
+                                <p><strong>Type: </strong>${type}</p>
+                                <p><strong>Ability: </strong>${data.ability}</p>
+                            </div>
+                            <div class = stats bar>
+                                
+                            </div>
+                            <div class = "picture">
+                                <img src="${data.image_url}" alt="Pokemon image">
+                            </div>
+                        </div>
+                
+                    </div>`;
+                });
             }
         </script>
 

@@ -6,10 +6,14 @@ from sklearn.ensemble import RandomForestClassifier
 import numpy as np
 
 
-df = pd.read_csv("pokemon_data_pokeapi.csv")
-#df['Type2'] = df['Type2'].fillna('None')
+df1 = pd.read_csv("pokemon_data_pokeapi.csv")
+df1 = df1.drop(columns = ['Pokedex Number', 'Classification','Height (m)', 'Weight (kg)', 'Generation', 'Legendary Status'])
+df2 = pd.read_csv("Pokemon_stats.csv")
+df2 = df2.drop(columns=['Type 1', 'Type 2', '#', 'Legendary', 'Generation'])
 
-df['ability1'] = [i.split(", ")[0] for i in df['Abilities']]
+df1['ability1'] = [i.split(", ")[0] for i in df1['Abilities']]
+df = pd.merge(df1, df2, on='Name', how='inner')
+print(df)
 #print(first_ability)
 
 
@@ -57,6 +61,7 @@ def get_user_input():
     type2 = type2in if type2in else None
     
     return type1in, type2
+    
 
 type1, type2 = get_user_input()
 

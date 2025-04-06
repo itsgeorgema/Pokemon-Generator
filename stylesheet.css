@@ -4,6 +4,7 @@ body{
     text-align: center;
     background-color: rgb(220, 220, 100);
 }
+/*
 body h1{
     color: rgb(0, 0, 0);
     text-shadow:
@@ -13,7 +14,29 @@ body h1{
        -2px -2px 0 rgb(255, 255, 255);
     margin: 80px;
     font-size: 3em;
+    
 }
+*/
+
+.header{
+    height: 160px;
+    width: 100%;
+    position :fixed;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgb(0, 0, 0);
+    font-size: 3em;
+    text-shadow:
+        2px 2px 0 rgb(255, 255, 255),
+       -2px 2px 0 rgb(255, 255, 255),
+        2px -2px 0 rgb(255, 255, 255),
+       -2px -2px 0 rgb(255, 255, 255);
+    background-color:aquamarine;
+}
+
 form{
     display: flex;
     flex-direction: column;
@@ -35,13 +58,21 @@ button:hover {
     background-color: #0f55a0;
 }
 .info_container{
+    margin-top: 250px;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
     width: 300px;
-    position: static;
-    margin: auto;
+}
+.content {
+    display: flex;
+    justify-content: space-between;
+    /*align-items: center;*/
+    
 }
 
 .result .result_container{
-    margin: 50px auto;
+    margin: 30px auto;
     padding: 50px;
     width: 80%;
     border-radius: 12px;
@@ -50,12 +81,25 @@ button:hover {
     background-color: rgb(255, 255, 255);
 }
 
-.result_container h2{
-    margin-top: 0;
-    font-size: 1.8em;
+.info {
+    text-align: left;
+    flex: 1;
 }
 
-.result_container p {
-    margin: 6px 0;
-    font-size: 1em;
+.info h2{
+    font-size: 3em;
+}
+
+.info p{
+    font-size: 1.5em;
+}
+
+.picture {
+    margin-left: 20px;
+}
+
+.picture img{
+    max-width: 400px;
+    height: auto;
+    align-items: flex-end;
 }
