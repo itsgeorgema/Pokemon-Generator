@@ -26,7 +26,7 @@ for x, row in metadata.iterrows():
                 merged_row=row.to_dict()
                 merged_row['image_path']=image_path
                 merged_data.append(merged_row)
-merged_df = pd.DataFrame(merged_data)
+merged_df= pd.DataFrame(merged_data)
 
 #get rid of broken/corrupted image paths
 #good_paths=[]
@@ -79,7 +79,7 @@ class PokemonDataset(Dataset):
 class Generator(nn.Module):
     def __init__(self, z_dim, condition_dim, img_channels=3, feature_g=64):
         super().__init__()
-        self.fc =nn.Linear(z_dim + condition_dim, feature_g * 8 * 4 * 4)
+        self.fc =nn.Linear(z_dim + condition_dim, feature_g*8*4*4)
         self.gen=nn.Sequential(nn.BatchNorm2d(feature_g* 8),
               nn.ReLU(True), nn.ConvTranspose2d(feature_g*8, feature_g*4,4,2,1), nn.BatchNorm2d(feature_g * 4),
             nn.ReLU(True),nn.ConvTranspose2d(feature_g*4, feature_g*2,4,2,1),nn.BatchNorm2d(feature_g*2),nn.ReLU(True),
@@ -87,19 +87,19 @@ class Generator(nn.Module):
             nn.BatchNorm2d(feature_g),nn.ReLU(True),nn.ConvTranspose2d(feature_g, img_channels,4,2,1), nn.Tanh())
 
     def forward(self, z, condition):
-        x = torch.cat([z, condition], dim=1)
-        x = self.fc(x).view(-1, 512, 4, 4)  # assumes feature_g = 64 → 512=64*8
+        x= torch.cat([z, condition],dim=1)
+        x=self.fc(x).view(-1,512,4,4)  
         return self.gen(x)
     
 ##CREATE DISCRIMINATOR TO COMPETE AGAINST GENERATOR
 class Discriminator(nn.Module):
     def __init__(self, condition_dim,img_channels=3,feature_d=64):
         super().__init__()
-        self.condition_fc=nn.Linear(condition_dim, 64 * 64)
+        self.condition_fc=nn.Linear(condition_dim,64*64)
         self.disc=nn.Sequential(
-            nn.Conv2d(img_channels + 1, feature_d,4,2,1),nn.LeakyReLU(.2,inplace=True),nn.Conv2d(feature_d, feature_d*2,4,2,1),    
-            nn.BatchNorm2d(feature_d*2),nn.LeakyReLU(.2, inplace=True),nn.Conv2d(feature_d* 2, feature_d*4,4,2,1),
-            nn.BatchNorm2d(feature_d*4),nn.LeakyReLU(.2, inplace=True),nn.Conv2d(feature_d*4,1,8), nn.Sigmoid() )
+            nn.Conv2d(img_channels+1, feature_d,4,2,1),nn.LeakyReLU(.2,inplace=True),nn.Conv2d(feature_d, feature_d*2,4,2,1),    
+            nn.BatchNorm2d(feature_d*2),nn.LeakyReLU(.2,inplace=True),nn.Conv2d(feature_d* 2,feature_d*4,4,2,1),
+            nn.BatchNorm2d(feature_d*4),nn.LeakyReLU(.2,inplace=True),nn.Conv2d(feature_d*4,1,8),nn.Sigmoid() )
 
     def forward(self,img,condition):
         batch_size=img.size(0)
@@ -124,7 +124,7 @@ def train_gan(generator,discriminator,dataloader, z_dim, condition_dim, num_epoc
         for imgs,conds in dataloader:
             imgs,conds=imgs.to(device),conds.to(device)
             bs =imgs.size(0)
-            real_labels=torch.ones(bs, 1).to(device)
+            real_labels=torch.ones(bs,1).to(device)
             fake_labels=torch.zeros(bs,1).to(device)
 
             # TRAIN DSICIMRINATOR

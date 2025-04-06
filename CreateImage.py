@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from torchvision.utils import save_image
+from ImageTrain import Generator
 
 metadata=pd.read_csv("pokemon_data_pokeapi.csv")
 types=sorted(list(set(metadata['Type1'].dropna().tolist() + metadata['Type2'].dropna().tolist())))
@@ -17,21 +18,18 @@ def one_hot_type(t):
         vector[types.index(t)]=1
     return vector
 
-#GENERATOR WITHOUT DISCRIMINATOR TO CREATE FAKE IMAGES
-class Generator(nn.Module):
-    def __init__(self, z_dim, condition_dim, img_channels=3, feature_g=64):
-        super().__init__()
-        self.fc=nn.Linear(z_dim+condition_dim,feature_g*8*4*4)
-        self.gen=nn.Sequential(nn.BatchNorm2d(feature_g*8),
-            nn.ReLU(True),nn.ConvTranspose2d(feature_g *8, feature_g*4,2,2,1),nn.BatchNorm2d(feature_g*4),nn.ReLU(True),
-            nn.ConvTranspose2d(feature_g*4, feature_g*2,4,2,1),
-            nn.BatchNorm2d(feature_g* 2),nn.ReLU(True),nn.ConvTranspose2d(feature_g*2, img_channels,4,2,1),nn.Tanh())
-
-    def forward(self, z,condition):
-        x= torch.cat([z,condition],dim=1)
-        x=self.fc(x).view(-1,512,4,4)
-        return self.gen(x)
-
+#GENERATOR WITHOUT DISCRIMINATOR TO CREATE FAKE IMAG                                                                                       ES
+#class Generator(nn.Module):
+ #   def __init__(self, z_dim, condition_dim, img_channels=3, feature_g=64):
+  ###    self.gen=nn.Sequential(nn.BatchNorm2d(feature_g*8),
+     #       nn.ReLU(True),nn.ConvTranspose2d(feature_g *8, feature_g*4,2,2,1),nn.BatchNorm2d(feature_g*4),nn.ReLU(True),
+      #      nn.ConvTranspose2d(feature_g*4, feature_g*2,4,2,1),
+       #     nn.BatchNorm2d(feature_g* 2),nn.ReLU(True),nn.ConvTranspose2d(feature_g*2, img_channels,4,2,1),nn.Tanh())
+#
+ ##      x= torch.cat([z,condition],dim=1)
+   #     x=self.fc(x).view(-1,512,4,4)
+    #    return self.gen(x)
+#
 #PROMPT USEER TO CREATE A POKEMON BY ASKING FOR ATTRIBUTES
 def get_user_input():
     print("Pokemon Creator:")
