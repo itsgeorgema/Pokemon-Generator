@@ -4,19 +4,6 @@ body{
     text-align: center;
     background-color: rgb(220, 220, 100);
 }
-/*
-body h1{
-    color: rgb(0, 0, 0);
-    text-shadow:
-        2px 2px 0 rgb(255, 255, 255),
-       -2px 2px 0 rgb(255, 255, 255),
-        2px -2px 0 rgb(255, 255, 255),
-       -2px -2px 0 rgb(255, 255, 255);
-    margin: 80px;
-    font-size: 3em;
-    
-}
-*/
 
 .header{
     height: 160px;
@@ -68,7 +55,7 @@ button:hover {
     display: flex;
     justify-content: space-between;
     /*align-items: center;*/
-    
+    gap: 40px
 }
 
 .result .result_container{
@@ -84,14 +71,21 @@ button:hover {
 .info {
     text-align: left;
     flex: 1;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .info h2{
-    font-size: 3em;
+    font-size: 2.5em;
+    max-width: 250px;
+    font-family: 'Arial Black', sans-serif;
+    letter-spacing: 1px;
 }
 
 .info p{
-    font-size: 1.5em;
+    font-size: 1.2em;
 }
 
 .picture {
@@ -99,7 +93,26 @@ button:hover {
 }
 
 .picture img{
-    max-width: 400px;
+    max-width: 350px;
     height: auto;
     align-items: flex-end;
 }
+canvas {
+    margin-top: 20px;
+    size: 1.2em;
+  }
+
+.stats_bar{
+    margin-top: 20px;
+    text-align: center;
+}
+.type-tag {
+    display: inline-block;
+    padding: 4px 10px;
+    margin: 2px;
+    border-radius: 12px;
+    color: white;
+    font-weight: bold;
+    font-size: 0.9em;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }

@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestRegressor
 from collections import Counter
-#from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify
 import random
 import requests
 from bs4 import BeautifulSoup
@@ -153,9 +153,8 @@ def predict_smoothness(type1, type2=None):
 
     iv = hp + atk + defen + satk + sdef + spd
     
-    return {"type1":type1, "type2":type2, "iv":iv, "hp":hp, "atk":atk, "defen":defen, "satk":satk, "sdef":sdef, "ability":random_ability()}
-    """
-
+    return {"type1":type1, "type2":type2, "iv":iv, "hp":hp, "atk":atk, "defen":defen, "satk":satk, "sdef":sdef, "spd":spd,"ability":random_ability()}
+"""
 def get_user_input():
     type1 = input("Enter Type 1: ").strip().capitalize() 
     type2_input = input("Enter Type 2 (or leave blank if missing): ").strip().capitalize() 
@@ -164,9 +163,6 @@ def get_user_input():
     result = predict_smoothness(type1, type2)
     print(result)
 
-get_user_input()
-
-"""
 app = Flask(__name__)
 @app.route('/')
 def index():
@@ -194,4 +190,3 @@ def generate():
 #get_user_input()
 if __name__ == '__main__':
     app.run(debug=True)
-"""
