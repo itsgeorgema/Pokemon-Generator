@@ -9,6 +9,7 @@ import random
 import requests
 from bs4 import BeautifulSoup
 import re
+from CreateImage import generate_and_save_image
 
 def get_df():
     url = "https://www.serebii.net/pokemon/nationalpokedex.shtml"
@@ -170,22 +171,36 @@ def index():
 
 @app.route('/generate', methods=['POST'])
 def generate():
-    data = request.get_json()
-    type1 = data.get("type1")
-    type2 = data.get("type2")
-
     try:
-        stats = predict_smoothness(type1, type2)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        data = request.get_json()
+        #print("Received data:", data)
 
-    return jsonify({
-        "type1": type1,
-        "type2": type2,
-        "ability": stats["ability"],
-        "stats": {k: v for k, v in stats.items() if k != "ability"},
-        "image_url": "https://zukan.pokemon.co.jp/zukan-api/up/images/index/e10f25b88cfd78ee822f46d234e4768f.png"
-    })
+        required_keys = ['type1', 'type2', 'height', 'weight', 'generation', 'legendary']
+        for key in required_keys:
+            if key not in data:
+                return jsonify({"error": f"Missing key: {key}"}), 400
+
+        type1 = data["type1"]
+        type2 = data["type2"]
+        height = float(data["height"])
+        weight = float(data["weight"])
+        generation = int(data["generation"])
+        legendary = bool(data["legendary"])
+
+        stats = predict_smoothness(type1, type2)
+        image_path = generate_and_save_image(type1, type2, height, weight, generation, legendary)
+
+        return jsonify({
+            "type1": type1,
+            "type2": type2,
+            "ability": stats["ability"],
+            "stats": {k: v for k, v in stats.items() if k != "ability"},
+            "image_url": "/" + image_path
+        })
+
+    except Exception as e:
+        print("ERROR:", e)
+        return jsonify({"error": str(e)}), 400
 
 #get_user_input()
 if __name__ == '__main__':
