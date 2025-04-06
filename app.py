@@ -7,7 +7,10 @@ import numpy as nan
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestRegressor
 from collections import Counter
+from flask import Flask, render_template, request, jsonify
 import random
+
+
 
 df1 = pd.read_csv("pokemon_data_pokeapi.csv")
 df1 = df1.drop(columns = ['Pokedex Number', 'Classification','Height (m)', 'Weight (kg)', 'Generation', 'Legendary Status'])
@@ -76,15 +79,7 @@ def predict_smoothness(type1, type2=None):
     spd = round(predicted_spd)
     iv = hp + atk + defen + satk + sdef + spd
     
-    return (f"Type 1: {type1} and Type 2: {type2 if type2 else 'None'}:\n"
-            f"  IV: {iv}\n"
-            f"  HP: {hp}\n"
-            f"  Attack: {atk}\n"
-            f"  Defense: {defen}\n"
-            f"  Special Attack: {satk}\n"
-            f"  Special Defense: {sdef}\n"
-            f"  Speed: {spd}\n"
-            f"  Random Ability: {random_ability()}\n")
+    return {"type1":type1, "type2":type2, "iv":iv, "hp":hp, "atk":atk, "defen":defen, "satk":satk, "sdef":sdef, "ability":random_ability()}
 
 def get_user_input():
     type1 = input("Enter Type 1: ").strip().capitalize() 
@@ -94,4 +89,30 @@ def get_user_input():
     result = predict_smoothness(type1, type2)
     print(result)
 
-get_user_input()
+app = Flask(__name__)
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/generate', methods=['POST'])
+def generate():
+    data = request.get_json()
+    type1 = data.get("type1")
+    type2 = data.get("type2")
+
+    try:
+        stats = predict_smoothness(type1, type2)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+    return jsonify({
+        "type1": type1,
+        "type2": type2,
+        "ability": stats["ability"],
+        "stats": {k: v for k, v in stats.items() if k != "ability"},
+        "image_url": "https://zukan.pokemon.co.jp/zukan-api/up/images/index/e10f25b88cfd78ee822f46d234e4768f.png"
+    })
+
+#get_user_input()
+if __name__ == '__main__':
+    app.run(debug=True)
