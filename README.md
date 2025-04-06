@@ -1,11 +1,13 @@
 # Pokemon-Generator
 
-training set made by merging two data sets from kaggle:
-    https://www.kaggle.com/datasets/hlrhegemony/pokemon-image-dataset?select=images
-    https://www.kaggle.com/datasets/mohitbansal31s/pokemon-dataset
+Image Generation and Statistical Modeling and Prediction for Stats with Pokemon
 
-trained using Generative Adversarial Network. To train more, download the entire repo and make sure you haev checkpoint.pth:
-    Simply run ImageTrain.py, and it will start training from the last epoch checkpoint that was commited to the repo
+training set made by merging two data sets from kaggle:
+    - https://www.kaggle.com/datasets/hlrhegemony/pokemon-image-dataset?select=images
+    - https://www.kaggle.com/datasets/mohitbansal31s/pokemon-dataset
+
+trained using conditional Generative Adversarial Network. To train more, download the entire repo and make sure you have checkpoint.pth:
+    - Simply run ImageTrain.py, and it will start training from the last epoch checkpoint that was commited to the repo
 
 To create images in VSCode, simply run CreateImage.py and input prompts into the terminal accordingly
 
@@ -13,4 +15,4 @@ To access the full website and create new pokemon, download the .html file and o
 
 **BE SURE TO DOWNLOAD ALL REQUIREMENTS AND DEPENDENCIES FROM requirements.txt
     run in terminal:
-        pip install -r requirements.txt
+        - pip install -r requirements.txt
