@@ -46,9 +46,9 @@ class PokemonDataset(Dataset):
         self.transform=transforms.Compose([
             transforms.Resize((64,64)),transforms.ToTensor(),transforms.Normalize((.5,.5,.5),(.5,.5,.5))])
         self.types= sorted(list(set(self.df['Type1'].dropna().tolist() + self.df['Type2'].dropna().tolist())))
-        self.gen_max=self.df['Generation'].max()
-        self.height_max=self.df['Height (m)'].max()
-        self.weight_max =self.df['Weight (kg)'].max()
+        self.max_gen=self.df['Generation'].max()
+        self.max_height=self.df['Height (m)'].max()
+        self.max_weight =self.df['Weight (kg)'].max()
 
     def one_hot_type(self, t):
         vector=[0]*len(self.types)
@@ -58,8 +58,8 @@ class PokemonDataset(Dataset):
     
     def __getitem__(self, idx):
         row=self.df.iloc[idx]
-        condition=self.one_hot_type(row['Type1'])+self.one_hot_type(row['Type2'])+[row['Height (m)']/self.height_max,
-            row['Weight (kg)']/self.weight_max,row['Generation']/self.gen_max,1.0 if row['Legendary Status'] else 0.0]
+        condition=self.one_hot_type(row['Type1'])+self.one_hot_type(row['Type2'])+[row['Height (m)']/self.max_height,
+            row['Weight (kg)']/self.max_weight,row['Generation']/self.max_gen,1.0 if row['Legendary Status'] else 0.0]
         try:
             img=Image.open(row['image_path']).convert("RGB")
             img = self.transform(img)
@@ -84,7 +84,7 @@ class Generator(nn.Module):
               nn.ReLU(True), nn.ConvTranspose2d(feature_g*8, feature_g*4,4,2,1), nn.BatchNorm2d(feature_g * 4),
             nn.ReLU(True),nn.ConvTranspose2d(feature_g*4, feature_g*2,4,2,1),nn.BatchNorm2d(feature_g*2),nn.ReLU(True),
             nn.ConvTranspose2d(feature_g* 2, feature_g,4,2,1),
-            nn.BatchNorm2d(feature_g),nn.ReLU(True),nn.ConvTranspose2d(feature_g, img_channels,4,2,1), nn.Tanh())
+            nn.BatchNorm2d(feature_g),nn.ReLU(True),nn.ConvTranspose2d(feature_g,img_channels,4,2,1),nn.Tanh())
 
     def forward(self, z, condition):
         x= torch.cat([z, condition],dim=1)
@@ -128,7 +128,7 @@ def train_gan(generator,discriminator,dataloader, z_dim, condition_dim, num_epoc
             fake_labels=torch.zeros(bs,1).to(device)
 
             # TRAIN DSICIMRINATOR
-            z=torch.randn(bs, z_dim).to(device)
+            z=torch.randn(bs,z_dim).to(device)
             fake_imgs=generator(z, conds)
             d_real=discriminator(imgs,conds)
             d_fake=discriminator(fake_imgs.detach(), conds)
@@ -193,7 +193,7 @@ if os.path.exists(checkpoint_path):
     d.load_state_dict(checkpoint['discriminator_state_dict'])
     g_opt.load_state_dict(checkpoint['g_optimizer_state_dict'])
     d_opt.load_state_dict(checkpoint['d_optimizer_state_dict'])
-    start_epoch=checkpoint['epoch'] + 1
+    start_epoch=checkpoint['epoch']+1
     print(f"Loaded checkpoint from epoch {start_epoch}")
 else:
     print("No training checkpoint")
