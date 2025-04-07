@@ -11,7 +11,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-
+#
 #MERGE DATA FROM POKEMON INFO CSV WITH MULTIPLE IMAGES FOR EACH POKEMON
 metadata=pd.read_csv("pokemon_data_pokeapi.csv")
 image_folder_path="images" 

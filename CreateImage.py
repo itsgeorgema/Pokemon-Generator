@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 import uuid
 from torchvision.utils import save_image
-
+#
 metadata=pd.read_csv("pokemon_data_pokeapi.csv")
 types=sorted(list(set(metadata['Type1'].dropna().tolist() + metadata['Type2'].dropna().tolist())))
 max_height=metadata['Height (m)'].max()
