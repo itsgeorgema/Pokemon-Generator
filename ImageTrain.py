@@ -11,7 +11,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-#
+
 #MERGE DATA FROM POKEMON INFO CSV WITH MULTIPLE IMAGES FOR EACH POKEMON
 metadata=pd.read_csv("pokemon_data_pokeapi.csv")
 image_folder_path="images" 
@@ -79,16 +79,16 @@ class PokemonDataset(Dataset):
 class Generator(nn.Module):
     def __init__(self, z_dim, condition_dim, img_channels=3, feature_g=64):
         super().__init__()
-        self.fc =nn.Linear(z_dim + condition_dim, feature_g * 8 * 4 * 4)
-        self.gen=nn.Sequential(nn.BatchNorm2d(feature_g* 8),
-              nn.ReLU(True), nn.ConvTranspose2d(feature_g*8, feature_g*4,4,2,1), nn.BatchNorm2d(feature_g * 4),
+        self.fc =nn.Linear(z_dim + condition_dim, feature_g*8*4*4)
+        self.gen=nn.Sequential(nn.BatchNorm2d(feature_g*8),
+              nn.ReLU(True), nn.ConvTranspose2d(feature_g*8, feature_g*4,4,2,1), nn.BatchNorm2d(feature_g*4),
             nn.ReLU(True),nn.ConvTranspose2d(feature_g*4, feature_g*2,4,2,1),nn.BatchNorm2d(feature_g*2),nn.ReLU(True),
             nn.ConvTranspose2d(feature_g* 2, feature_g,4,2,1),
             nn.BatchNorm2d(feature_g),nn.ReLU(True),nn.ConvTranspose2d(feature_g, img_channels,4,2,1), nn.Tanh())
 
     def forward(self, z, condition):
-        x = torch.cat([z, condition], dim=1)
-        x = self.fc(x).view(-1, 512, 4, 4)  # assumes feature_g = 64 → 512=64*8
+        x=torch.cat([z, condition],dim=1)
+        x=self.fc(x).view(-1,512,4,4)
         return self.gen(x)
     
 ##CREATE DISCRIMINATOR TO COMPETE AGAINST GENERATOR
