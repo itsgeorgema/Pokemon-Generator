@@ -1,0 +1,39 @@
+-- Initialize Pokemon Generator database
+
+-- Create extensions if needed
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+
+-- Set up permissions
+ALTER DATABASE $DBNAME SET timezone TO 'UTC';
+
+-- Make sure the user has full permissions on all tables
+ALTER SCHEMA public OWNER TO $OWNER;
+GRANT ALL ON SCHEMA public TO $OWNER;
+
+-- Create a table specifically for tracking image generation stats
+CREATE TABLE IF NOT EXISTS generation_stats (
+    id SERIAL PRIMARY KEY,
+    type1 VARCHAR(50) NOT NULL,
+    type2 VARCHAR(50),
+    legendary BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    generation INTEGER NOT NULL,
+    success BOOLEAN DEFAULT TRUE
+);
+
+-- Create an index on the created_at column for faster queries
+CREATE INDEX IF NOT EXISTS idx_generation_stats_created_at ON generation_stats(created_at);
+
+-- Create a function to clean up old images (unused in this example but useful for maintenance)
+CREATE OR REPLACE FUNCTION cleanup_old_images()
+RETURNS void AS $$
+BEGIN
+    DELETE FROM generated_image WHERE expires_at < NOW();
+END;
+$$ LANGUAGE plpgsql;
+
+-- Grant privileges on all tables to the owner
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO $OWNER;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO $OWNER;
+GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO $OWNER; 

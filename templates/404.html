@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found</title>
+    <!-- Tailwind CSS: Use built CSS for production -->
+    <link href="/static/dist/tailwind.css" rel="stylesheet">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            min-height: 100vh;
+            background: url('/public/background1.jpg') no-repeat center center fixed;
+            background-size: cover;
+            background-color: transparent !important;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+    <div class="text-center max-w-xl p-8 bg-white rounded-2xl shadow-lg">
+        <div class="text-8xl font-extrabold text-indigo-600 mb-4">404</div>
+        <div class="text-2xl font-semibold mb-6">Oops! The page you're looking for doesn't exist.</div>
+        <p class="mb-6 text-gray-700">The Pokémon you're searching for seems to have escaped into the tall grass.</p>
+        <a href="/" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl py-3 px-8 transition-colors duration-200">Return to Homepage</a>
+    </div>
+</body>
+</html> 

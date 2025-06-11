@@ -1,0 +1,62 @@
+services:
+  web:
+    build: .
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./static/generated:/app/static/generated
+      - ./static/samples:/app/static/samples
+      - ./models:/app/models
+      - ./logs:/app/logs
+      - ./.env:/app/.env
+    environment:
+      - FLASK_ENV=${FLASK_ENV}
+      - FLASK_APP=${FLASK_APP}
+      - FLASK_DEBUG=${FLASK_DEBUG}
+      - SECRET_KEY=${SECRET_KEY}
+      - PYTHONPATH=/app
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - CHECKPOINT_PATH=${CHECKPOINT_PATH}
+      - POKEMON_DATA_PATH=${POKEMON_DATA_PATH}
+      - APP_VERSION=${APP_VERSION}
+      - MODEL_VERSION=${MODEL_VERSION}
+      - LOG_FILE=${LOG_FILE}
+      - DOCKER_CONTAINER=true
+      - PORT=5001
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - HOST=0.0.0.0
+    depends_on:
+      - db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - pokemon-network
+
+  db:
+    image: postgres:14-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+      - ./postgres/init:/docker-entrypoint-initdb.d
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - pokemon-network
+
+volumes:
+  postgres_data:
+
+networks:
+  pokemon-network:
+    driver: bridge

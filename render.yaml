@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: pokemon-generator
+    env: python
+    plan: starter
+    buildCommand: |
+      pip install -r requirements.txt
+      python scripts/db_migrate.py
+    startCommand: ./scripts/start_server.sh
+    envVars:
+      - key: DATABASE_URL
+        value: # Set this in the Render dashboard to Supabase connection string
+    healthCheckPath: /
+    autoDeploy: true
+    disk:
+      name: pokemon-data
+      mountPath: /app/data
+      sizeGB: 10
+
+databases:
+  - name: pokemon-db
+    databaseName: pokemon_dev
+    user: postgres
+    plan: starter
+    postgresMajorVersion: 14
+    ipAllowList: []  # only allow internal connections
+    
+disks:
+  - name: pokemon-models
+    mountPath: /app/models
+    sizeGB: 10 

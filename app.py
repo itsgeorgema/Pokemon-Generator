@@ -1,175 +1,436 @@
-#code goes here
-#
+import os
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestRegressor
 from collections import Counter
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory, make_response
 import random
-import requests
-from bs4 import BeautifulSoup
-import re
-from CreateImage import generate_and_save_image
-
-url = "https://www.serebii.net/pokemon/nationalpokedex.shtml"
-response = requests.get(url)
-soup = BeautifulSoup(response.text, 'html.parser')
-wrapper_div = soup.find('div', id='wrapper')
-content_div = soup.find('div', id='content')
-main_tag = content_div.find('main')
-table_tag = main_tag.find('table', class_='dextable', align='center')
-            
-rows = []
-
-for row in table_tag.find_all('tr')[2:]:
-    cols = row.find_all('td')
-    if len(cols) >= 11:
-        name = cols[3].get_text(strip=True)
-
-        type_tags = cols[4].find_all('a')
-        types = [type_tag['href'].split('/')[-1] for type_tag in type_tags]
-
-        type1 =  types[0].capitalize()
-        type2 = types[1].capitalize() if len(types) > 1 else None
-   
-        ability_column = cols[5]
-        ability_list = []
-        for a_tag in ability_column.find_all('a'):
-            ability_name = a_tag.get_text().strip()
-            ability_list.append(ability_name)
-    
-        hp = cols[6].get_text(strip=True)
-        att = cols[7].get_text(strip=True)
-        def_ = cols[8].get_text(strip=True)
-        s_atk = cols[9].get_text(strip=True)
-        s_def = cols[10].get_text(strip=True)
-        spd = cols[11].get_text(strip=True)
-        
-        rows.append([name, type1, type2, ability_list, hp, att, def_, s_atk, s_def, spd])
-
-df = pd.DataFrame(rows)
-df.columns = ["Name", "Type1", "Type2", "Abilities", "HP", "Attack", "Defense", "Sp. Atk", "Sp. Def", "Speed"]
-
-#df = pd.DataFrame(rows)
-
-"""
-df1 = pd.read_csv("pokemon_data_pokeapi.csv")
-df1 = df1.drop(columns = ['Pokedex Number', 'Classification','Height (m)', 'Weight (kg)', 'Generation', 'Legendary Status'])
-df2 = pd.read_csv("Pokemon_stats.csv")
-df2 = df2.drop(columns=['Type 1', 'Type 2', '#', 'Legendary', 'Generation'])
-
-df1['ability1'] = [i.split(", ")[0] for i in df1['Abilities']]
-df = pd.merge(df1, df2, on='Name', how='inner')
-print(df)
-"""
+from src.models.CreateImage import generate_and_save_image
+import logging
+from dotenv import load_dotenv
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime, timedelta, timezone
+import threading
+import time
+from src.config.config import config, Config
+from logging.handlers import RotatingFileHandler
+import numpy as np
+from sqlalchemy import text
+import uuid
 
 
-type_encoder = LabelEncoder()
-df['Type1_encoded'] = type_encoder.fit_transform(df['Type1'])
-df['Type2_encoded'] = type_encoder.fit_transform(df['Type2'])
-
-rf_hp = RandomForestRegressor(n_estimators=100, random_state=42)
-rf_hp.fit(df[['Type1_encoded', 'Type2_encoded']].fillna(-1), df['HP'])
-
-rf_def = RandomForestRegressor(n_estimators=100, random_state=42)
-rf_def.fit(df[['Type1_encoded', 'Type2_encoded']].fillna(-1), df['Defense'])
-
-rf_atk = RandomForestRegressor(n_estimators=100, random_state=42)
-rf_atk.fit(df[['Type1_encoded', 'Type2_encoded']].fillna(-1), df['Attack'])
-
-rf_satk = RandomForestRegressor(n_estimators=100, random_state=42)
-rf_satk.fit(df[['Type1_encoded', 'Type2_encoded']].fillna(-1), df['Sp. Atk'])
-
-rf_sdef = RandomForestRegressor(n_estimators=100, random_state=42)
-rf_sdef.fit(df[['Type1_encoded', 'Type2_encoded']].fillna(-1), df['Sp. Def'])
-
-rf_spd = RandomForestRegressor(n_estimators=100, random_state=42)
-rf_spd.fit(df[['Type1_encoded', 'Type2_encoded']].fillna(-1), df['Speed'])
-
-def random_ability():
-    #all_abilities = df['Abilities'].str.split(',', expand=True).stack().reset_index(drop=True)
-    all_abilities = [ability for sublist in df['Abilities'] for ability in sublist]
-    ability_counts = Counter(all_abilities)
-    common_abilities = {ability: count for ability, count in ability_counts.items() if count >= 2}
-    abilities_list = list(common_abilities.keys())
-    weights = list(common_abilities.values())
-    return random.choices(abilities_list, weights=weights, k=1)[0]
-
-def predict_smoothness(type1, type2=None):
-    type1_encoded = type_encoder.transform([type1])[0] 
-    
-    if type2 is None:
-        predicted_hp = rf_hp.predict([[type1_encoded, -1]])[0]
-        predicted_atk = rf_atk.predict([[type1_encoded, -1]])[0]
-        predicted_def = rf_def.predict([[type1_encoded, -1]])[0]
-        predicted_satk = rf_satk.predict([[type1_encoded, -1]])[0]
-        predicted_sdef = rf_sdef.predict([[type1_encoded, -1]])[0]
-        predicted_spd = rf_spd.predict([[type1_encoded, -1]])[0]
-    else:
-        type2_encoded = type_encoder.transform([type2])[0]
-        predicted_hp = rf_hp.predict([[type1_encoded, type2_encoded]])[0]
-        predicted_atk = rf_atk.predict([[type1_encoded, type2_encoded]])[0]
-        predicted_def = rf_def.predict([[type1_encoded, type2_encoded]])[0]
-        predicted_satk = rf_satk.predict([[type1_encoded, type2_encoded]])[0]
-        predicted_sdef = rf_sdef.predict([[type1_encoded, type2_encoded]])[0]
-        predicted_spd = rf_spd.predict([[type1_encoded, type2_encoded]])[0]
-    
-    hp = round(predicted_hp)
-    atk = round(predicted_atk)
-    defen = round(predicted_def)
-    satk = round(predicted_satk)
-    sdef = round(predicted_sdef)
-    spd = round(predicted_spd)
-    iv = hp + atk + defen + satk + sdef + spd
-    
-    return {"type1":type1, "type2":type2, "iv":iv, "hp":hp, "atk":atk, "defen":defen, "satk":satk, "sdef":sdef, "spd":spd,"ability":random_ability()}
-
-def get_user_input():
-    type1 = input("Enter Type 1: ").strip().capitalize() 
-    type2_input = input("Enter Type 2 (or leave blank if missing): ").strip().capitalize() 
-    type2 = type2_input if type2_input else None
-    
-    result = predict_smoothness(type1, type2)
-    print(result)
+load_dotenv()
 
 app = Flask(__name__)
+app_config = config[os.getenv('FLASK_ENV', 'default')]
+app.config.from_object(app_config)
+
+# Validate environment variables
+try:
+    Config.validate_env_vars()
+except EnvironmentError as e:
+    app.logger.error(f"Configuration error: {str(e)}")
+    raise
+
+# Handle Render's postgres:// prefix if present
+if app.config['SQLALCHEMY_DATABASE_URI'].startswith('postgres://'):
+    app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace('postgres://', 'postgresql://', 1)
+
+if os.getenv('DOCKER_CONTAINER') == 'true':
+    app.logger.info("Running in Docker container")
+    if 'localhost' in app.config['SQLALCHEMY_DATABASE_URI']:
+        app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace('localhost', 'db')
+    
+    postgres_user = os.getenv('POSTGRES_USER')
+    postgres_password = os.getenv('POSTGRES_PASSWORD')
+    postgres_db = os.getenv('POSTGRES_DB')
+    
+    if postgres_user and postgres_password and postgres_db:
+        db_url = f"postgresql://{postgres_user}:{postgres_password}@db:5432/{postgres_db}"
+        app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+        app.logger.info(f"Using database URL: {app.config['SQLALCHEMY_DATABASE_URI'].replace(postgres_password, '****')}")
+
+if not app.debug:
+    file_handler = RotatingFileHandler(app.config['LOG_FILE'], maxBytes=10240, backupCount=10)
+    file_handler.setFormatter(logging.Formatter(
+        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+    ))
+    file_handler.setLevel(logging.INFO)
+    app.logger.addHandler(file_handler)
+
+app.logger.setLevel(logging.INFO)
+app.logger.info('Pokemon Generator startup')
+
+# Initialize database
+try:
+    db = SQLAlchemy(app)
+    with app.app_context():
+        db.session.execute(text("SELECT 1"))
+        db.session.commit()
+    app.logger.info("Successfully connected to PostgreSQL database")
+except Exception as e:
+    app.logger.error(f"PostgreSQL connection failed: {str(e)}")
+    raise
+
+# Define database model for temporary images
+class GeneratedImage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(255), nullable=False, unique=True)
+    image_data = db.Column(db.LargeBinary, nullable=False)  # Store the actual image data
+    content_type = db.Column(db.String(100), default='image/png')  # MIME type
+    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    expires_at = db.Column(db.DateTime, nullable=False)
+    type1 = db.Column(db.String(50), nullable=False)  # Store Pokemon type for stats
+    type2 = db.Column(db.String(50), nullable=True)   # Secondary type may be None
+
+    def __init__(self, filename, image_data, type1, type2=None):
+        self.filename = filename
+        self.image_data = image_data
+        self.type1 = type1
+        self.type2 = type2
+        # Ensure timezone-aware datetime for expires_at
+        self.expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)  # Images expire after 10 minutes
+
+# Create database tables
+with app.app_context():
+    db.create_all()
+
+# Load and preprocess Pokemon data
+def load_pokemon_data():
+    try:
+        metadata = pd.read_csv(app.config['POKEMON_DATA_PATH'])
+        
+        type1_col = 'Type 1' if 'Type 1' in metadata.columns else 'Type1'
+        type2_col = 'Type 2' if 'Type 2' in metadata.columns else 'Type2'
+        
+        types = sorted(list(set(metadata[type1_col].dropna().tolist() + metadata[type2_col].dropna().tolist())))
+        
+        type_encoder = LabelEncoder()
+        metadata['Type1_encoded'] = type_encoder.fit_transform(metadata[type1_col])
+        
+        metadata['Type2_filled'] = metadata[type2_col].fillna('None')
+        all_types = list(type_encoder.classes_) + ['None']
+        type_encoder.classes_ = np.array(all_types)
+        metadata['Type2_encoded'] = type_encoder.transform(metadata['Type2_filled'])
+        
+        stats_data = pd.read_csv(app.config['POKEMON_DATA_PATH'])
+        
+        models = {}
+        for stat in ['HP', 'Attack', 'Defense', 'Sp. Atk', 'Sp. Def', 'Speed']:
+            # Create a mapping from Type 1/Type 2 to the stats
+            type_to_stat = {}
+            for _, row in stats_data.iterrows():
+                type1 = row['Type 1']
+                type2 = row['Type 2'] if pd.notna(row['Type 2']) else 'None'
+                key = (type1, type2)
+                if key not in type_to_stat:
+                    type_to_stat[key] = []
+                type_to_stat[key].append(row[stat])
+            
+            # For each type combination, take the average stat value
+            for key, values in type_to_stat.items():
+                type_to_stat[key] = sum(values) / len(values)
+            
+            # Train a model on the encoded types
+            model = RandomForestRegressor(n_estimators=100, random_state=42)
+            
+            # Create training data from the type_to_stat mapping
+            X_train = []
+            y_train = []
+            for (type1, type2), stat_value in type_to_stat.items():
+                type1_encoded = 0
+                type2_encoded = 0
+                
+                if type1 in type_encoder.classes_:
+                    type1_idx = np.where(type_encoder.classes_ == type1)[0]
+                    if len(type1_idx) > 0:
+                        type1_encoded = int(type1_idx[0])
+                
+                if type2 in type_encoder.classes_:
+                    type2_idx = np.where(type_encoder.classes_ == type2)[0]
+                    if len(type2_idx) > 0:
+                        type2_encoded = int(type2_idx[0])
+                
+                X_train.append([type1_encoded, type2_encoded])
+                y_train.append(stat_value)
+            
+            model.fit(X_train, y_train)
+            models[stat] = model
+            
+        return metadata, types, type_encoder, models
+    except Exception as e:
+        app.logger.error(f"Error loading Pokemon data: {str(e)}")
+        raise
+
+# Load data at startup
+try:
+    metadata, types, type_encoder, stat_models = load_pokemon_data()
+    app.logger.info("Successfully loaded Pokemon data and trained models")
+except Exception as e:
+    app.logger.error(f"Failed to initialize application: {str(e)}")
+    raise
+
+def random_ability():
+    try:
+        if 'Abilities' in metadata.columns:
+            all_abilities = [ability for sublist in metadata['Abilities'] for ability in sublist]
+        elif 'abilities' in metadata.columns:
+            all_abilities = [ability for sublist in metadata['abilities'] for ability in sublist]
+        else:
+            # If no abilities column is found, return a default list
+            return random.choice(['Overgrow', 'Blaze', 'Torrent', 'Intimidate', 'Levitate', 
+                                 'Static', 'Synchronize', 'Sand Veil', 'Immunity'])
+        
+        ability_counts = Counter(all_abilities)
+        common_abilities = {ability: count for ability, count in ability_counts.items() if count >= 2}
+        abilities_list = list(common_abilities.keys())
+        weights = list(common_abilities.values())
+        return random.choices(abilities_list, weights=weights, k=1)[0]
+    except Exception as e:
+        app.logger.error(f"Error selecting random ability: {str(e)}")
+        return random.choice(['Overgrow', 'Blaze', 'Torrent', 'Intimidate', 'Levitate', 
+                             'Static', 'Synchronize', 'Sand Veil', 'Immunity'])
+
+def predict_stats(type1, type2):
+    try:
+        type1_encoded = 0
+        type2_encoded = 0
+        
+        if type1 in type_encoder.classes_:
+            type1_idx = np.where(type_encoder.classes_ == type1)[0]
+            if len(type1_idx) > 0:
+                type1_encoded = int(type1_idx[0])
+        
+        type2_val = type2 if type2 else 'None'
+        if type2_val in type_encoder.classes_:
+            type2_idx = np.where(type_encoder.classes_ == type2_val)[0]
+            if len(type2_idx) > 0:
+                type2_encoded = int(type2_idx[0])
+        
+        stats = {}
+        for stat, model in stat_models.items():
+            predicted = model.predict([[type1_encoded, type2_encoded]])[0]
+            stats[stat.lower().replace(' ', '_').replace('.', '')] = round(predicted)
+            
+        return stats
+    except Exception as e:
+        app.logger.error(f"Error predicting stats for {type1}/{type2}: {str(e)}")
+        return {
+            'hp': 80, 'attack': 80, 'defense': 80, 
+            'sp_atk': 80, 'sp_def': 80, 'speed': 80
+        }
+
+def cleanup_expired_images():
+    """Background task to clean up expired images"""
+    while True:
+        try:
+            with app.app_context():
+                cutoff_time = datetime.now(timezone.utc) - timedelta(minutes=10)
+                app.logger.info(f"Cleaning up images created before {cutoff_time}")
+                
+                # Delete expired records from the database
+                try:
+                    # Use SQLAlchemy to delete expired records with explicit comparison
+                    expired_records = GeneratedImage.query.filter(
+                        text("expires_at < :cutoff_time")
+                    ).params(cutoff_time=cutoff_time).all()
+                    
+                    for record in expired_records:
+                        db.session.delete(record)
+                    
+                    db.session.commit()
+                    
+                    if expired_records:
+                        app.logger.info(f"Deleted {len(expired_records)} expired database records")
+                except Exception as db_error:
+                    app.logger.error(f"Error cleaning up database records: {str(db_error)}")
+            
+        except Exception as e:
+            app.logger.error(f"Error in cleanup task: {str(e)}")
+        
+        time.sleep(60)
+
+def migrate_to_timezone_aware():
+    """Migrate existing records to timezone-aware datetimes"""
+    try:
+        with app.app_context():
+            images = GeneratedImage.query.all()
+            updated = 0
+            
+            for image in images:
+                try:
+                    if image.expires_at and image.expires_at.tzinfo is None:
+                        image.expires_at = image.expires_at.replace(tzinfo=timezone.utc)
+                        updated += 1
+                    
+                    if image.created_at and image.created_at.tzinfo is None:
+                        image.created_at = image.created_at.replace(tzinfo=timezone.utc)
+                        updated += 1
+                except Exception as inner_e:
+                    app.logger.error(f"Error updating record {image.id}: {str(inner_e)}")
+            
+            if updated > 0:
+                db.session.commit()
+                app.logger.info(f"Migrated {updated} records to timezone-aware datetimes")
+    except Exception as e:
+        app.logger.error(f"Error migrating to timezone-aware datetimes: {str(e)}")
+
+with app.app_context():
+    db.create_all()
+    migrate_to_timezone_aware()
+
+if not app.config.get('TESTING'):
+    cleanup_thread = threading.Thread(target=cleanup_expired_images, daemon=True)
+    cleanup_thread.start()
+
+def cleanup_all_images():
+    """Delete all previously generated images and database records"""
+    try:
+        # Delete all database records
+        with app.app_context():
+            try:
+                records = GeneratedImage.query.all()
+                for record in records:
+                    db.session.delete(record)
+                db.session.commit()
+                if records:
+                    app.logger.info(f"Deleted {len(records)} previous database records")
+            except Exception as db_error:
+                app.logger.error(f"Error cleaning up database records: {str(db_error)}")
+    except Exception as e:
+        app.logger.error(f"Error in cleanup_all_images: {str(e)}")
+
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', 
+                           types=types, 
+                           config={
+                               'APP_VERSION': app.config.get('APP_VERSION', '1.0.0'),
+                               'MODEL_VERSION': app.config.get('MODEL_VERSION', '2.0.0')
+                           })
+
+def generate_ivs():
+    # Generate a random IV (0-31) for each stat
+    return {
+        'hp': random.randint(0, 31),
+        'attack': random.randint(0, 31),
+        'defense': random.randint(0, 31),
+        'sp_atk': random.randint(0, 31),
+        'sp_def': random.randint(0, 31),
+        'speed': random.randint(0, 31)
+    }
 
 @app.route('/generate', methods=['POST'])
 def generate():
     try:
         data = request.get_json()
-        #print("Received data:", data)
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
 
-        required_keys = ['type1', 'type2', 'height', 'weight', 'generation', 'legendary']
-        for key in required_keys:
-            if key not in data:
-                return jsonify({"error": f"Missing key: {key}"}), 400
+        type1 = str(data.get('type1')).strip().capitalize()
+        type2 = str(data.get('type2')).strip().capitalize() if data.get('type2') else None
+        height = float(data.get('height', 1.0))
+        weight = float(data.get('weight', 20.0))
+        generation = int(data.get('generation', 1))
+        legendary = bool(data.get('legendary', False))
+        
+        if not data.get('name'):
+            return jsonify({"error": "Pokemon name is required"}), 400
+        
+        name = str(data.get('name')).strip()
 
-        type1 = data["type1"]
-        type2 = data["type2"]
-        height = float(data["height"])
-        weight = float(data["weight"])
-        generation = int(data["generation"])
-        legendary = bool(data["legendary"])
+        if not types or type1 not in types:
+            return jsonify({"error": f"Invalid or missing primary type: {type1}"}), 400
+        if type2 and type2 not in types:
+            return jsonify({"error": f"Invalid secondary type: {type2}"}), 400
 
-        stats = predict_smoothness(type1, type2)
-        image_path = generate_and_save_image(type1, type2, height, weight, generation, legendary)
+        stats = predict_stats(type1, type2)
+        ivs = generate_ivs()
+        for stat in stats:
+            stats[stat] += ivs[stat]
 
+        try:
+            cleanup_all_images()
+            # Generate image in memory
+            image_bytes = generate_and_save_image(
+                type1, type2, height, weight, generation, legendary,
+                checkpoint_path=app.config['CHECKPOINT_PATH'],
+                data_path=app.config['POKEMON_DATA_PATH']
+            )
+            filename = f"{uuid.uuid4().hex}.png"
+            # Save image record to database with the binary data
+            image_record = GeneratedImage(
+                filename=filename,
+                image_data=image_bytes,
+                type1=type1,
+                type2=type2
+            )
+            db.session.add(image_record)
+            db.session.commit()
+            app.logger.info(f"Successfully generated image: {filename}")
+        except Exception as e:
+            app.logger.error(f"Error generating image: {str(e)}")
+            return jsonify({"error": "Failed to generate Pokemon image"}), 500
+
+        # Return response with image URL and stats
         return jsonify({
             "type1": type1,
             "type2": type2,
-            "ability": stats["ability"],
-            "stats": {k: v for k, v in stats.items() if k != "ability"},
-            "image_url": "/" + image_path
+            "name": name,
+            "ability": random_ability(),
+            "stats": stats,
+            "ivs": ivs,
+            "image_url": f"/image/{filename}?t={int(time.time())}"
         })
 
     except Exception as e:
-        print("ERROR:", e)
-        return jsonify({"error": str(e)}), 400
+        app.logger.error(f"Unexpected error in generate endpoint: {str(e)}")
+        return jsonify({"error": "An unexpected error occurred"}), 500
 
-#get_user_input()
+@app.route('/image/<path:filename>')
+def serve_generated_image(filename):
+    """Serve a generated image from the database"""
+    try:
+        # Query the database for the image
+        image_record = GeneratedImage.query.filter_by(filename=filename).first()
+        
+        if image_record and image_record.image_data:
+            # Create a response with the image data
+            response = make_response(image_record.image_data)
+            response.headers.set('Content-Type', image_record.content_type)
+            return response
+        else:
+            app.logger.warning(f"Image not found in database: {filename}")
+            return jsonify({"error": "Image not found"}), 404
+    except Exception as e:
+        app.logger.error(f"Error serving image {filename}: {str(e)}")
+        return jsonify({"error": f"Error serving image: {str(e)}"}), 500
+
+@app.route('/public/<path:filename>')
+def serve_public_file(filename):
+    """Serve files from the public directory"""
+    try:
+        public_dir = 'public'
+        filepath = os.path.join(public_dir, filename)
+        if os.path.exists(filepath):
+            return send_from_directory(public_dir, filename)
+        else:
+            app.logger.warning(f"Public file not found: {filepath}")
+            return jsonify({"error": "File not found"}), 404
+    except Exception as e:
+        app.logger.error(f"Error serving public file {filename}: {str(e)}")
+        return jsonify({"error": f"Error serving file: {str(e)}"}), 500
+
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    db.session.rollback()
+    app.logger.error(f"Internal server error: {error}")
+    return render_template('500.html'), 500
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)

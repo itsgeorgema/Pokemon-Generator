@@ -1,249 +1,315 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
-        <meta charset = "utf-8">
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Pokemon Generator</title>
-        <link rel="stylesheet" href="{{ url_for('static', filename='stylesheet.css') }}">
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+        <!-- Tailwind CSS: Use built CSS for production -->
+        <link href="/static/dist/tailwind.css" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap');
+            html, body {
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                width: 100vw;
+                min-height: 100vh;
+                background: url('/public/background1.jpg') no-repeat center center fixed;
+                background-size: cover;
+                background-color: transparent !important;
+            }
+            body {
+                font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                position: relative;
+                overflow-x: hidden;
+            }
+            .hp-bar { background: #D32F2F !important; }     
+            .attack-bar { background: #111111 !important; }    
+            .defense-bar { background: #D32F2F !important; }   
+            .spatk-bar { background: #111111 !important; }     
+            .spdef-bar { background: #D32F2F !important; }     
+            .speed-bar { background: #111111 !important; }     
+            .stat-bar { position: relative; border-radius: 12px 12px 0 0; overflow: hidden; }
+            .stat-value { position: absolute; top: 0; left: 0; right: 0; z-index: 2; background: white; margin-bottom: 6px; }
+            .stat-fill { position: absolute; left: 0; right: 0; bottom: 24px; z-index: 1; border-top-left-radius: 12px; border-top-right-radius: 12px; box-sizing: border-box; max-height: 100%; overflow: hidden; }
+            .stat-label { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; }
+        </style>
     </head>
-    <body>
-        <!--<h1>Original Pokemon Generator</h1>-->
-        <div class="header">
-            <p>Original Pokemon Generator</p>
+    <body class="min-h-screen flex flex-col justify-between">
+        <!-- Header Section with Pokémon Red Background -->
+        <div class="header-section w-full text-center relative z-10 bg-red-700 py-5">
+            <div class="max-w-6xl mx-auto px-4">
+                <h1 class="title text-4xl font-black text-white m-0 uppercase tracking-wide flex items-center justify-center">
+                    <img src="https://www.freepnglogos.com/uploads/pokemon-symbol-logo-png-31.png" alt="Pokéball" class="h-12 mr-3 align-middle">
+                    Pokémon Generator
+                </h1>
+            </div>
         </div>
-        <div class = "info_container">
-            
-            <form class="typeForm">
-                
-                <label>Name:
-                    <input type="text" id="pokemonName" placeholder="Enter the name" maxlength="10"></label>
-
-                <label>Type 1:
-                    <select id="type1">
-                        <option value="">--Select--</option>
-                        <option>Normal</option>
-                        <option>Fire</option>
-                        <option>Water</option>
-                        <option>Electric</option>
-                        <option>Grass</option>
-                        <option>Ice</option>
-                        <option>Fighting</option>
-                        <option>Poison</option>
-                        <option>Ground</option>
-                        <option>Flying</option>
-                        <option>Psychic</option>
-                        <option>Bug</option>
-                        <option>Rock</option>
-                        <option>Ghost</option>
-                        <option>Dragon</option>
-                        <option>Dark</option>
-                        <option>Steel</option>
-                        <option>Fairy</option>
-                    </select>
-                </label>
-                <label>Type 2:
-                    <select id="type2">
-                        <option value="">--Select--</option>
-                        <option>Normal</option>
-                        <option>Fire</option>
-                        <option>Water</option>
-                        <option>Electric</option>
-                        <option>Grass</option>
-                        <option>Ice</option>
-                        <option>Fighting</option>
-                        <option>Poison</option>
-                        <option>Ground</option>
-                        <option>Flying</option>
-                        <option>Psychic</option>
-                        <option>Bug</option>
-                        <option>Rock</option>
-                        <option>Ghost</option>
-                        <option>Dragon</option>
-                        <option>Dark</option>
-                        <option>Steel</option>
-                        <option>Fairy</option>
-                    </select>
-                </label>
-                <label>Height (m):
-                    <input type="number" step="0.01" id="height">
-                  </label>
-                  
-                  <label>Weight (kg):
-                    <input type="number" step="0.1" id="weight">
-                  </label>
-                  
-                  <label>Generation:
-                    <select id="generation">
-                      <option value="1">1</option>
-                      <option value="2">2</option>
-                      <option value="3">3</option>
-                      <option value="4">4</option>
-                      <option value="5">5</option>
-                      <option value="6">6</option>
-                      <option value="7">7</option>
-                      <option value="8">8</option>
-                    </select>
-                  </label>
-                  
-                  <label>Legendary:
-                    <input type="checkbox" id="legendary">
-                  </label>
-                
-                <button onclick="generatePokemon()">Generate!</button>
-            </form>
-        </div>
-
-        <div class = "result" id="Result">
-            <!--
-                <div class = "result_container">
-                    <div class = "content">
-                        <div class = "info">
-                            <h2>Name here</h2>
-                            <p><strong>Type: </strong></p>
-                            <p><strong>Ability: </strong></p>
+        <!-- Main Section with Background Image -->
+        <main class="main-section flex-grow py-8 w-full relative z-1">
+            <div class="max-w-6xl mx-auto px-4">
+                <!-- Form Container -->
+                <div class="form-container bg-white rounded-xl p-8 mx-auto mb-8 max-w-lg shadow-lg border-2 border-red-600">
+                    <form id="pokemonForm">
+                        <div class="form-group mb-4">
+                            <label for="type1" class="form-label font-semibold block mb-1 text-gray-700">Type 1:</label>
+                            <select class="form-control block w-full rounded-md border border-gray-300 p-3" id="type1" required>
+                                <option value="">Select Primary Type</option>
+                                {% for type in types %}
+                                <option value="{{ type }}">{{ type }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
-                        <div class = "picture">
-
+                        <div class="form-group mb-4">
+                            <label for="type2" class="form-label font-semibold block mb-1 text-gray-700">Type 2:</label>
+                            <select class="form-control block w-full rounded-md border border-gray-300 p-3" id="type2">
+                                <option value="">Select Secondary Type</option>
+                                {% for type in types %}
+                                <option value="{{ type }}">{{ type }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group mb-4">
+                            <label for="name" class="form-label font-semibold block mb-1 text-gray-700">Pokemon Name:</label>
+                            <input type="text" class="form-control block w-full rounded-md border border-gray-300 p-3" id="name" placeholder="Enter a name for your Pokemon" required>
+                            <div class="invalid-feedback text-red-600 text-sm mt-1 hidden">Please provide a name for your Pokemon.</div>
+                        </div>
+                        <div class="form-group mb-4">
+                            <label for="height" class="form-label font-semibold block mb-1 text-gray-700">Height (m):</label>
+                            <input type="number" class="form-control block w-full rounded-md border border-gray-300 p-3" id="height" step="0.1" min="0.1" max="20" value="1.0" required>
+                        </div>
+                        <div class="form-group mb-4">
+                            <label for="weight" class="form-label font-semibold block mb-1 text-gray-700">Weight (kg):</label>
+                            <input type="number" class="form-control block w-full rounded-md border border-gray-300 p-3" id="weight" step="0.1" min="0.1" max="1000" value="20.0" required>
+                        </div>
+                        <div class="form-group mb-4">
+                            <label for="generation" class="form-label font-semibold block mb-1 text-gray-700">Generation:</label>
+                            <select class="form-control block w-full rounded-md border border-gray-300 p-3" id="generation" required>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-4">
+                            <label class="form-label font-semibold block mb-1 text-gray-700">Legendary:</label>
+                            <div class="flex items-center">
+                                <input class="form-check-input h-5 w-5 text-red-600 border-gray-300 rounded" type="checkbox" id="legendary">
+                                <label class="form-check-label ml-2" for="legendary"></label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary bg-red-600 hover:bg-red-800 text-white font-bold rounded-md py-3 px-6 w-full mt-2 transition-colors duration-300">Generate!</button>
+                    </form>
+                </div>
+                <div class="loading text-center my-8 hidden">
+                    <i class="fas fa-spinner fa-spin text-3xl text-red-600"></i>
+                    <p class="mt-2">Generating your Pokemon...</p>
+                </div>
+                <div class="error-message text-center text-red-600 bg-red-100 rounded-md p-3 my-4 hidden"></div>
+                <!-- Result Container - Separate from Form -->
+                <div id="resultContainer" class="result-container bg-white rounded-xl p-8 mx-auto my-8 shadow-lg border-2 border-red-600 max-w-4xl hidden">
+                    <div class="flex flex-col md:flex-row min-h-[450px]">
+                        <div class="md:w-1/2 w-full flex flex-col">
+                            <div class="brand-logo text-3xl font-black text-red-600 mb-4 uppercase tracking-wide" id="pokemonName"></div>
+                            <div class="mb-3">
+                                <span class="type-tag inline-block px-4 py-1 rounded-full text-white font-bold mr-2 capitalize shadow" id="type1Tag"></span>
+                                <span class="type-tag inline-block px-4 py-1 rounded-full text-white font-bold mr-2 capitalize shadow" id="type2Tag" style="display: none;"></span>
+                            </div>
+                            <div class="mb-3">
+                                <strong>Ability:</strong> <span class="ability"></span>
+                            </div>
+                            <div class="stats-chart flex justify-between h-52 my-5 p-2 bg-white bg-opacity-20 rounded-lg shadow-inner">
+                                <div class="stat-bar w-1/6 h-44 flex flex-col items-center justify-end">
+                                    <span class="stat-value font-bold w-full text-center bg-white bg-opacity-90 rounded-sm" id="iv-hp"></span>
+                                    <div class="stat-fill hp-bar w-4/5 mx-auto transition-all duration-700" id="bar-hp" style="height: 0;"></div>
+                                    <span class="stat-label text-xs w-full text-center">HP</span>
+                                </div>
+                                <div class="stat-bar w-1/6 h-44 flex flex-col items-center justify-end">
+                                    <span class="stat-value font-bold w-full text-center bg-white bg-opacity-90 rounded-sm" id="iv-attack"></span>
+                                    <div class="stat-fill attack-bar w-4/5 mx-auto transition-all duration-700" id="bar-attack" style="height: 0;"></div>
+                                    <span class="stat-label text-xs w-full text-center">Attack</span>
+                                </div>
+                                <div class="stat-bar w-1/6 h-44 flex flex-col items-center justify-end">
+                                    <span class="stat-value font-bold w-full text-center bg-white bg-opacity-90 rounded-sm" id="iv-defense"></span>
+                                    <div class="stat-fill defense-bar w-4/5 mx-auto transition-all duration-700" id="bar-defense" style="height: 0;"></div>
+                                    <span class="stat-label text-xs w-full text-center">Defense</span>
+                                </div>
+                                <div class="stat-bar w-1/6 h-44 flex flex-col items-center justify-end">
+                                    <span class="stat-value font-bold w-full text-center bg-white bg-opacity-90 rounded-sm" id="iv-spatk"></span>
+                                    <div class="stat-fill spatk-bar w-4/5 mx-auto transition-all duration-700" id="bar-spatk" style="height: 0;"></div>
+                                    <span class="stat-label text-xs w-full text-center">Sp. Atk</span>
+                                </div>
+                                <div class="stat-bar w-1/6 h-44 flex flex-col items-center justify-end">
+                                    <span class="stat-value font-bold w-full text-center bg-white bg-opacity-90 rounded-sm" id="iv-spdef"></span>
+                                    <div class="stat-fill spdef-bar w-4/5 mx-auto transition-all duration-700" id="bar-spdef" style="height: 0;"></div>
+                                    <span class="stat-label text-xs w-full text-center">Sp. Def</span>
+                                </div>
+                                <div class="stat-bar w-1/6 h-44 flex flex-col items-center justify-end">
+                                    <span class="stat-value font-bold w-full text-center bg-white bg-opacity-90 rounded-sm" id="iv-speed"></span>
+                                    <div class="stat-fill speed-bar w-4/5 mx-auto transition-all duration-700" id="bar-speed" style="height: 0;"></div>
+                                    <span class="stat-label text-xs w-full text-center">Speed</span>
+                                </div>
+                            </div>
+                            <div class="total-stats text-lg font-bold mt-2 text-center">Total IVs: <span id="totalIVs">0</span></div>
+                        </div>
+                        <div class="md:w-1/2 w-full flex items-center justify-center">
+                            <img class="pokemon-image w-full min-h-[350px] object-contain rounded-lg mt-5 shadow" src="" alt="Generated Pokemon">
                         </div>
                     </div>
                 </div>
-            -->
-        </div>
-
+            </div>
+        </main>
         <script>
-            function generatePokemon(){
-                event.preventDefault();
-                const typeColors = {
-                    Normal:   "#A8A77A",
-                    Fire:     "#EE8130",
-                    Water:    "#6390F0",
-                    Electric: "#F7D02C",
-                    Grass:    "#7AC74C",
-                    Ice:      "#96D9D6",
-                    Fighting: "#C22E28",
-                    Poison:   "#A33EA1",
-                    Ground:   "#E2BF65",
-                    Flying:   "#A98FF3",
-                    Psychic:  "#F95587",
-                    Bug:      "#A6B91A",
-                    Rock:     "#B6A136",
-                    Ghost:    "#735797",
-                    Dragon:   "#6F35FC",
-                    Dark:     "#705746",
-                    Steel:    "#B7B7CE",
-                    Fairy:    "#D685AD"
-                };
-                const type1 = document.getElementById("type1").value;
-                const type2 = document.getElementById("type2").value;
-                let type = "";
-                let typeHTML = "";
-
-                if(type1 === type2 || !type1 || !type2){
-                    //error
-                    alert("Please select two different types!");
-                    return;
-                }
-
-                const name = document.getElementById("pokemonName").value.trim();
-                if (!/^[A-Za-z0-9]+$/.test(name)) {
-                    alert("Name must contain only letters and numbers!");
-                    return;
-                }
-                if (name.length > 10) {
-                    alert("Name must be 10 characters or fewer!");
-                    return;
-                }
-
-                typeHTML += `<span class="type-tag" style="background-color: ${typeColors[type1]}">${type1}</span>`;
-                typeHTML += ` <span class="type-tag" style="background-color: ${typeColors[type2]}">${type2}</span>`;
-
-                fetch("/generate",{
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({name, type1, type2,
-                        height: parseFloat(document.getElementById("height").value),
-                        weight: parseFloat(document.getElementById("weight").value),
-                        generation: parseInt(document.getElementById("generation").value),
-                        legendary: document.getElementById("legendary").checked
-                    })
-                })
-                .then(response => response.json())
-
-                .then(data => {
-                    if(type1 === "None"){
-                        type = type2;
-                    } else if (type2 === "None"){
-                        type = type1;
-                    } else {
-                        type = `${type1} & ${type2}`;
-                    }
-
-                    const stats = data.stats;
-                    const ivTotal = stats["hp"] + stats["atk"] + stats["defen"] + stats["satk"] + stats["sdef"] + stats["spd"];
-
-                    document.getElementById("Result").innerHTML = 
-                    `<div class="result_container">
-                        <div class = "content">
-                            <div class = "info">
-                                <h2>${name.toUpperCase()}</h2>
-                                <p><strong>Type: </strong>${typeHTML}</p>
-                                <p><strong>Ability: </strong>${data.ability}</p>
-                            </div>
-                            <div class = stats bar>
-                                <canvas id = "statsChart" width = "400" height = "200"></canvas>
-                                <p><strong>Total:</strong> ${ivTotal}</p>
-                            </div>
-                            <div class = "picture">
-                                <img src="${data.image_url}" alt="Pokemon image"style="width: 200px; height: 200px; object-fit: contain;">
-                            </div>
-                        </div>
+            document.getElementById('pokemonForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
                 
-                    </div>`;
-
-                    
-                    const ctx = document.getElementById("statsChart").getContext("2d");
-                    new Chart(ctx, {
-                        type: "bar",
-                        data:{
-                            labels: ["HP", "Attack", "Defense", "Sp. Atk", "Sp. Def", "Speed"],
-                            datasets: [{label: "Base Stas", data: [stats["hp"],stats["atk"],stats["defen"],stats["satk"],stats["sdef"],stats["spd"]],
-                                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#8E44AD', '#27AE60', '#F39C12'],
-                                borderWidth: 1
-                            }]
+                // Validate name field
+                const nameField = document.getElementById('name');
+                if (!nameField.value.trim()) {
+                    nameField.classList.add('is-invalid');
+                    return;
+                } else {
+                    nameField.classList.remove('is-invalid');
+                }
+                
+                document.querySelector('.loading').style.display = 'block';
+                document.querySelector('.loading p').style.color = '#fff';
+                document.querySelector('.error-message').style.display = 'none';
+                document.getElementById('resultContainer').style.display = 'none';
+                
+                const formData = {
+                    type1: document.getElementById('type1').value,
+                    type2: document.getElementById('type2').value || null,
+                    name: nameField.value.trim(),
+                    height: parseFloat(document.getElementById('height').value),
+                    weight: parseFloat(document.getElementById('weight').value),
+                    generation: parseInt(document.getElementById('generation').value),
+                    legendary: document.getElementById('legendary').checked
+                };
+                
+                try {
+                    const response = await fetch('/generate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
                         },
-                        options: {
-                            responsive: true,
-                            plugins: {
-                                legend: { display: false },
-                                datalabels: {
-                                    color: '#000',
-                                    anchor: 'end',
-                                    align: 'start',
-                                    font: {
-                                        weight: 'bold',
-                                        size: 12
-                                    },
-                                    formatter: (value) => value
-                                }
-                            },
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    max: 200
-                                }
-                            }
-                        },
-                        plugins: [ChartDataLabels]
+                        body: JSON.stringify(formData)
                     });
                     
-
+                    const data = await response.json();
                     
-                });
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Failed to generate Pokemon');
+                    }
+                    
+                    // Update Pokemon card
+                    document.querySelector('.pokemon-image').src = data.image_url;
+                    
+                    // Update Pokemon name
+                    document.getElementById('pokemonName').textContent = data.name;
+                    
+                    // Update type tags
+                    const type1Tag = document.getElementById('type1Tag');
+                    const type2Tag = document.getElementById('type2Tag');
+                    
+                    type1Tag.textContent = data.type1;
+                    type1Tag.style.backgroundColor = getTypeColor(data.type1);
+                    
+                    if (data.type2) {
+                        type2Tag.textContent = data.type2;
+                        type2Tag.style.backgroundColor = getTypeColor(data.type2);
+                        type2Tag.style.display = 'inline-block';
+                    } else {
+                        type2Tag.style.display = 'none';
+                    }
+                    
+                    // Update stats with bar heights
+                    const ivs = data.ivs;
+                    const maxIV = 31;
+                    const maxBarHeight = 150;
+                    const barRadiusBuffer = 2; // px buffer to preserve border-radius
+                    const statValueGap = 30; // px, height of stat-value box + margin
+                    const minBarHeight = 8;
+                    const statKeys = ['hp', 'attack', 'defense', 'sp_atk', 'sp_def', 'speed'];
+                    const barClasses = {
+                        hp: 'hp-bar',
+                        attack: 'attack-bar',
+                        defense: 'defense-bar',
+                        sp_atk: 'spatk-bar',
+                        sp_def: 'spdef-bar',
+                        speed: 'speed-bar'
+                    };
+                    let totalIVs = 0;
+                    statKeys.forEach(key => {
+                        document.getElementById('iv-' + key.replace('_', '')).textContent = ivs[key];
+                        const bar = document.getElementById('bar-' + key.replace('_', ''));
+                        let barHeight = (ivs[key] / maxIV) * (maxBarHeight - barRadiusBuffer - statValueGap);
+                        if (ivs[key] > 0 && barHeight < minBarHeight) barHeight = minBarHeight;
+                        // Animation: reset to 0, force reflow, then animate to final height
+                        bar.style.transition = 'none';
+                        bar.style.height = '0px';
+                        void bar.offsetHeight; // force reflow
+                        bar.style.transition = 'height 0.7s cubic-bezier(0.4,0,0.2,1)';
+                        setTimeout(() => {
+                            bar.style.height = barHeight + 'px';
+                        }, 10);
+                        bar.className = 'stat-fill';
+                        bar.classList.add(barClasses[key]);
+                        totalIVs += ivs[key];
+                    });
+                    document.getElementById('totalIVs').textContent = totalIVs;
+                    document.querySelector('.ability').textContent = data.ability;
+                    document.getElementById('resultContainer').style.display = 'block';
+                } catch (error) {
+                    document.querySelector('.error-message').textContent = error.message;
+                    document.querySelector('.error-message').style.display = 'block';
+                } finally {
+                    document.querySelector('.loading').style.display = 'none';
+                }
+            });
+            document.getElementById('name').addEventListener('input', function() {
+                if (this.value.trim()) {
+                    this.classList.remove('is-invalid');
+                }
+            });
+            function getTypeColor(type) {
+                const typeColors = {
+                    normal: '#A8A878',
+                    fire: '#F08030',
+                    water: '#6890F0',
+                    electric: '#F8D030',
+                    grass: '#78C850',
+                    ice: '#98D8D8',
+                    fighting: '#C03028',
+                    poison: '#A040A0',
+                    ground: '#E0C068',
+                    flying: '#A890F0',
+                    psychic: '#F85888',
+                    bug: '#A8B820',
+                    rock: '#B8A038',
+                    ghost: '#705898',
+                    dragon: '#7038F8',
+                    dark: '#705848',
+                    steel: '#B8B8D0',
+                    fairy: '#EE99AC'
+                };
+                
+                return typeColors[type.toLowerCase()] || '#888888';
             }
         </script>
-
+        <!-- Footer Section with Version Info -->
+        <footer class="footer-section py-4 text-center text-white bg-black bg-opacity-90 mt-8">
+            <div class="max-w-6xl mx-auto px-4">
+                <span>
+                    Pokemon Generator v{{ config.APP_VERSION }} |
+                    GAN Model v{{ config.MODEL_VERSION }}
+                </span>
+            </div>
+        </footer>
     </body>
 </html>
-
-<!--360 x 330-->

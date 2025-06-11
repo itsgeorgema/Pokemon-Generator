@@ -1,0 +1,14 @@
+{
+  "name": "pokemon-generator",
+  "version": "1.0.0",
+  "private": true,
+  "devDependencies": {
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.31",
+    "tailwindcss": "^3.3.3"
+  },
+  "scripts": {
+    "build:css": "tailwindcss -i ./static/src/tailwind.css -o ./static/dist/tailwind.css --minify",
+    "watch:css": "tailwindcss -i ./static/src/tailwind.css -o ./static/dist/tailwind.css --watch"
+  }
+}
