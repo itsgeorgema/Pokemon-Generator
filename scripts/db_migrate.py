@@ -9,6 +9,9 @@ import logging
 import time
 from dotenv import load_dotenv
 
+# Ensure the parent directory is in sys.path for module resolution
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
