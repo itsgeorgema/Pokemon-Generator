@@ -32,9 +32,6 @@ logs/
 # Node
 node_modules/
 
-#model
-models/checkpoint.pth
-
 # Database
 *.db
 *.sqlite3
