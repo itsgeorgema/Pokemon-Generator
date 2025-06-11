@@ -2,6 +2,11 @@
 
 A web application that generates unique Pokemon images using a conditional GAN (Generative Adversarial Network) based on user-selected types and other parameters.
 
+## NOTE:
+A recent commit in this project encompasses a large amount of refactored and added code. This was the result of a very concentrated effort densely packed into 4 days to restructure and optimize the codebase in order to deploy it to a live website. I anticipated a very small amount of changes and configurations, but I got very into the refactoring that I made many, many changes in the process that I didn't commit until the end of my spree. While I typically favor smaller, more frequent, and atomic commits for easier code review and tracking, I chose to consolidate this particular refactor into a single commit once the entire module was stable and tested to push to a live website.
+
+I've learned a lot from this experience about managing larger code changes, and moving forward, I will definitely make sure to break down complex refactoring efforts into incremental commits that better reflect the development process, for my own sanity in tracking changes at the end.
+
 ## Features
 
 - Generate unique Pokemon images based on selected types
