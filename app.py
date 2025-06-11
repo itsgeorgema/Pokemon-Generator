@@ -6,17 +6,15 @@ from collections import Counter
 from flask import Flask, render_template, request, jsonify, send_from_directory, make_response
 import random
 from src.models.CreateImage import generate_and_save_image
-import logging
 from dotenv import load_dotenv
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta, timezone
 import threading
 import time
 from src.config.config import config, Config
-from logging.handlers import RotatingFileHandler
-import numpy as np
 from sqlalchemy import text
 import uuid
+import numpy as np
 
 
 load_dotenv()
@@ -29,7 +27,6 @@ app.config.from_object(app_config)
 try:
     Config.validate_env_vars()
 except EnvironmentError as e:
-    app.logger.error(f"Configuration error: {str(e)}")
     raise
 
 # Handle Render's postgres:// prefix if present
@@ -37,7 +34,6 @@ if app.config['SQLALCHEMY_DATABASE_URI'].startswith('postgres://'):
     app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace('postgres://', 'postgresql://', 1)
 
 if os.getenv('DOCKER_CONTAINER') == 'true':
-    app.logger.info("Running in Docker container")
     if 'localhost' in app.config['SQLALCHEMY_DATABASE_URI']:
         app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace('localhost', 'db')
     
@@ -48,18 +44,6 @@ if os.getenv('DOCKER_CONTAINER') == 'true':
     if postgres_user and postgres_password and postgres_db:
         db_url = f"postgresql://{postgres_user}:{postgres_password}@db:5432/{postgres_db}"
         app.config['SQLALCHEMY_DATABASE_URI'] = db_url
-        app.logger.info(f"Using database URL: {app.config['SQLALCHEMY_DATABASE_URI'].replace(postgres_password, '****')}")
-
-if not app.debug:
-    file_handler = RotatingFileHandler(app.config['LOG_FILE'], maxBytes=10240, backupCount=10)
-    file_handler.setFormatter(logging.Formatter(
-        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
-    ))
-    file_handler.setLevel(logging.INFO)
-    app.logger.addHandler(file_handler)
-
-app.logger.setLevel(logging.INFO)
-app.logger.info('Pokemon Generator startup')
 
 # Initialize database
 try:
@@ -67,9 +51,7 @@ try:
     with app.app_context():
         db.session.execute(text("SELECT 1"))
         db.session.commit()
-    app.logger.info("Successfully connected to PostgreSQL database")
 except Exception as e:
-    app.logger.error(f"PostgreSQL connection failed: {str(e)}")
     raise
 
 # Define database model for temporary images
@@ -159,15 +141,12 @@ def load_pokemon_data():
             
         return metadata, types, type_encoder, models
     except Exception as e:
-        app.logger.error(f"Error loading Pokemon data: {str(e)}")
         raise
 
 # Load data at startup
 try:
     metadata, types, type_encoder, stat_models = load_pokemon_data()
-    app.logger.info("Successfully loaded Pokemon data and trained models")
 except Exception as e:
-    app.logger.error(f"Failed to initialize application: {str(e)}")
     raise
 
 def random_ability():
@@ -187,7 +166,6 @@ def random_ability():
         weights = list(common_abilities.values())
         return random.choices(abilities_list, weights=weights, k=1)[0]
     except Exception as e:
-        app.logger.error(f"Error selecting random ability: {str(e)}")
         return random.choice(['Overgrow', 'Blaze', 'Torrent', 'Intimidate', 'Levitate', 
                              'Static', 'Synchronize', 'Sand Veil', 'Immunity'])
 
@@ -214,7 +192,6 @@ def predict_stats(type1, type2):
             
         return stats
     except Exception as e:
-        app.logger.error(f"Error predicting stats for {type1}/{type2}: {str(e)}")
         return {
             'hp': 80, 'attack': 80, 'defense': 80, 
             'sp_atk': 80, 'sp_def': 80, 'speed': 80
@@ -226,7 +203,6 @@ def cleanup_expired_images():
         try:
             with app.app_context():
                 cutoff_time = datetime.now(timezone.utc) - timedelta(minutes=10)
-                app.logger.info(f"Cleaning up images created before {cutoff_time}")
                 
                 # Delete expired records from the database
                 try:
@@ -241,12 +217,12 @@ def cleanup_expired_images():
                     db.session.commit()
                     
                     if expired_records:
-                        app.logger.info(f"Deleted {len(expired_records)} expired database records")
+                        pass
                 except Exception as db_error:
-                    app.logger.error(f"Error cleaning up database records: {str(db_error)}")
+                    pass
             
         except Exception as e:
-            app.logger.error(f"Error in cleanup task: {str(e)}")
+            pass
         
         time.sleep(60)
 
@@ -267,13 +243,13 @@ def migrate_to_timezone_aware():
                         image.created_at = image.created_at.replace(tzinfo=timezone.utc)
                         updated += 1
                 except Exception as inner_e:
-                    app.logger.error(f"Error updating record {image.id}: {str(inner_e)}")
+                    pass
             
             if updated > 0:
                 db.session.commit()
-                app.logger.info(f"Migrated {updated} records to timezone-aware datetimes")
+                pass
     except Exception as e:
-        app.logger.error(f"Error migrating to timezone-aware datetimes: {str(e)}")
+        pass
 
 with app.app_context():
     db.create_all()
@@ -294,11 +270,11 @@ def cleanup_all_images():
                     db.session.delete(record)
                 db.session.commit()
                 if records:
-                    app.logger.info(f"Deleted {len(records)} previous database records")
+                    pass
             except Exception as db_error:
-                app.logger.error(f"Error cleaning up database records: {str(db_error)}")
+                pass
     except Exception as e:
-        app.logger.error(f"Error in cleanup_all_images: {str(e)}")
+        pass
 
 @app.route('/')
 def index():
@@ -367,9 +343,9 @@ def generate():
             )
             db.session.add(image_record)
             db.session.commit()
-            app.logger.info(f"Successfully generated image: {filename}")
+            pass
         except Exception as e:
-            app.logger.error(f"Error generating image: {str(e)}")
+            pass
             return jsonify({"error": "Failed to generate Pokemon image"}), 500
 
         # Return response with image URL and stats
@@ -384,7 +360,7 @@ def generate():
         })
 
     except Exception as e:
-        app.logger.error(f"Unexpected error in generate endpoint: {str(e)}")
+        pass
         return jsonify({"error": "An unexpected error occurred"}), 500
 
 @app.route('/image/<path:filename>')
@@ -400,10 +376,10 @@ def serve_generated_image(filename):
             response.headers.set('Content-Type', image_record.content_type)
             return response
         else:
-            app.logger.warning(f"Image not found in database: {filename}")
+            pass
             return jsonify({"error": "Image not found"}), 404
     except Exception as e:
-        app.logger.error(f"Error serving image {filename}: {str(e)}")
+        pass
         return jsonify({"error": f"Error serving image: {str(e)}"}), 500
 
 @app.route('/public/<path:filename>')
@@ -415,10 +391,10 @@ def serve_public_file(filename):
         if os.path.exists(filepath):
             return send_from_directory(public_dir, filename)
         else:
-            app.logger.warning(f"Public file not found: {filepath}")
+            pass
             return jsonify({"error": "File not found"}), 404
     except Exception as e:
-        app.logger.error(f"Error serving public file {filename}: {str(e)}")
+        pass
         return jsonify({"error": f"Error serving file: {str(e)}"}), 500
 
 @app.errorhandler(404)
@@ -428,7 +404,7 @@ def not_found_error(error):
 @app.errorhandler(500)
 def internal_error(error):
     db.session.rollback()
-    app.logger.error(f"Internal server error: {error}")
+    pass
     return render_template('500.html'), 500
 
 if __name__ == '__main__':

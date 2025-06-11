@@ -4,14 +4,8 @@ Main entry point for the Pokemon Generator application.
 This script imports and runs the Flask app.
 """
 import os
-import logging
-import socket
 from dotenv import load_dotenv
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+import socket
 
 load_dotenv()
 
@@ -32,7 +26,6 @@ if __name__ == '__main__':
     port = int(os.environ['PORT'])
     host = os.environ['HOST']
     debug = os.environ['FLASK_DEBUG'].lower() in ('true', '1', 't')
-    logging.info(f"Starting Pokemon Generator on {host}:{port} (debug={debug})")
     ip = get_ip_address()
     print("\n" + "=" * 60)
     print(f"Pokemon Generator is running!")
