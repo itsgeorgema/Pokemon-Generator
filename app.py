@@ -36,14 +36,8 @@ if app.config['SQLALCHEMY_DATABASE_URI'].startswith('postgres://'):
 if os.getenv('DOCKER_CONTAINER') == 'true':
     if 'localhost' in app.config['SQLALCHEMY_DATABASE_URI']:
         app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace('localhost', 'db')
-    
-    postgres_user = os.getenv('POSTGRES_USER')
-    postgres_password = os.getenv('POSTGRES_PASSWORD')
-    postgres_db = os.getenv('POSTGRES_DB')
-    
-    if postgres_user and postgres_password and postgres_db:
-        db_url = f"postgresql://{postgres_user}:{postgres_password}@db:5432/{postgres_db}"
-        app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+    db_url = os.getenv('DATABASE_URL')
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 
 # Initialize database
 try:

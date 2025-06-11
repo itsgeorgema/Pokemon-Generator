@@ -18,52 +18,39 @@ def wait_for_database(max_retries=10, retry_interval=5):
     from sqlalchemy import create_engine
     from sqlalchemy.exc import OperationalError
 
-    # Get database connection parameters
-    postgres_user = os.getenv('POSTGRES_USER')
-    postgres_password = os.getenv('POSTGRES_PASSWORD')
-    postgres_db = os.getenv('POSTGRES_DB')
-    postgres_host = os.getenv('POSTGRES_HOST', 'db' if os.getenv('DOCKER_CONTAINER') == 'true' else 'localhost')
-    postgres_port = os.getenv('POSTGRES_PORT', '5432')
-    
-    # Get database URL from environment variable or construct it
     db_uri = os.getenv('DATABASE_URL')
     if not db_uri:
-        db_uri = f"postgresql://{postgres_user}:{postgres_password}@{postgres_host}:{postgres_port}/{postgres_db}"
-        pass
+        print("[ERROR] DATABASE_URL environment variable is not set. Exiting.")
+        return False
     
-    # If Docker container, ensure we're using the correct host
-    if os.getenv('DOCKER_CONTAINER') == 'true' and 'localhost' in db_uri:
-        db_uri = db_uri.replace('localhost', 'db')
-        pass
-
     # If using Render's postgres:// format, convert to postgresql://
     if db_uri.startswith("postgres://"):
         db_uri = db_uri.replace("postgres://", "postgresql://", 1)
-        pass
+        print("[INFO] Converted DATABASE_URL from postgres:// to postgresql://")
 
-    # Mask the password in the URI for logging
+    # Mask the password in the URI for printing
     masked_uri = db_uri
     if '@' in db_uri:
         parts = db_uri.split('@')
         prefix_parts = parts[0].split(':')
         if len(prefix_parts) > 2:  # Contains username and password
             masked_uri = f"{prefix_parts[0]}:****@{parts[1]}"
-    
-    pass
+
+    print(f"[INFO] Attempting to connect to database: {masked_uri}")
     retries = 0
     while retries < max_retries:
         try:
             engine = create_engine(db_uri)
             conn = engine.connect()
             conn.close()
-            pass
+            print("[INFO] Successfully connected to the database")
             return True
         except OperationalError as e:
             retries += 1
-            pass
+            print(f"[WARN] Database connection attempt {retries}/{max_retries} failed: {e}")
             time.sleep(retry_interval)
 
-    pass
+    print("[ERROR] Failed to connect to the database after multiple attempts")
     return False
 
 def check_table_column_exists(db, table_name, column_name):
@@ -87,18 +74,54 @@ def check_table_column_exists(db, table_name, column_name):
 def migrate_database():
     """Create or update database tables using SQLAlchemy models."""
     try:
+        print("[INFO] Starting database migration...")
         if not wait_for_database():
-            pass
+            print("[ERROR] Could not connect to database, exiting migration")
             return False
 
         from app import app, db, GeneratedImage
-        
+        print("[INFO] Connected to app and database, creating tables...")
         with app.app_context():
             db.create_all()
-            pass
+            print("[INFO] Successfully created/updated database tables")
+
+            table_name = getattr(GeneratedImage, '__tablename__', 'generated_image').lower()
+            if not check_table_column_exists(db, table_name, 'image_data'):
+                print(f"[INFO] Adding image_data and related columns to {table_name} table")
+                from sqlalchemy import text
+                db.session.execute(text(f"""
+                ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS image_data BYTEA;
+                ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS content_type VARCHAR(100) DEFAULT 'image/png';
+                ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS type1 VARCHAR(50);
+                ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS type2 VARCHAR(50);
+                """))
+                db.session.commit()
+                print(f"[INFO] Added image storage columns to {table_name} table")
+
+            from sqlalchemy import text
+            result = db.session.execute(text("SELECT to_regclass('public.generation_stats');"))
+            table_exists = result.scalar() is not None
+
+            if not table_exists:
+                print("[INFO] Creating generation_stats table")
+                db.session.execute(text("""
+                CREATE TABLE IF NOT EXISTS generation_stats (
+                    id SERIAL PRIMARY KEY,
+                    type1 VARCHAR(50) NOT NULL,
+                    type2 VARCHAR(50),
+                    legendary BOOLEAN DEFAULT FALSE,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    generation INTEGER NOT NULL,
+                    success BOOLEAN DEFAULT TRUE
+                );
+                CREATE INDEX IF NOT EXISTS idx_generation_stats_created_at ON generation_stats(created_at);
+                """))
+                db.session.commit()
+                print("[INFO] Created generation_stats table")
+            print("[INFO] Database migration completed successfully.")
             return True
     except Exception as e:
-        pass
+        print(f"[ERROR] Error migrating database: {e}")
         return False
 
 if __name__ == "__main__":
