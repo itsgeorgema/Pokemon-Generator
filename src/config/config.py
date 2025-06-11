@@ -10,7 +10,6 @@ class Config:
         'SECRET_KEY',
         'CHECKPOINT_PATH',
         'POKEMON_DATA_PATH',
-        'LOG_FILE',
         'APP_VERSION',
         'MODEL_VERSION',
         'DATABASE_URL',
@@ -36,7 +35,6 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     CHECKPOINT_PATH = os.getenv('CHECKPOINT_PATH')
     POKEMON_DATA_PATH = os.getenv('POKEMON_DATA_PATH')
-    LOG_FILE = os.getenv('LOG_FILE')
     APP_VERSION = os.getenv('APP_VERSION')
     MODEL_VERSION = os.getenv('MODEL_VERSION')
     

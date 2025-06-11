@@ -141,7 +141,6 @@ Here are all the required environment variables:
    - `MODEL_VERSION`: ML model version number
    - `CHECKPOINT_PATH`: Path to the model checkpoint file
    - `POKEMON_DATA_PATH`: Path to the Pokemon data CSV file
-   - `LOG_FILE`: Path to the log file
 
 ## Quick Start with Docker
 
@@ -202,10 +201,6 @@ APP_VERSION=1.2.0
 MODEL_VERSION=2.0.0
 CHECKPOINT_PATH=models/checkpoint.pth
 POKEMON_DATA_PATH=data/Pokemon_stats.csv
-
-# Log settings
-LOG_FILE=logs/pokemon_generator.log
-```
 
 ## Manual Installation
 

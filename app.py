@@ -51,7 +51,9 @@ try:
     with app.app_context():
         db.session.execute(text("SELECT 1"))
         db.session.commit()
+    print("[INFO] Successfully connected to the database.")
 except Exception as e:
+    print(f"[ERROR] Database connection failed: {str(e)}")
     raise
 
 # Define database model for temporary images
