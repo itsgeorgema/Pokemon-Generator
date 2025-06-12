@@ -4,7 +4,13 @@ services:
     env: python
     plan: starter
     buildCommand: |
+      # Make the setup script executable
+      chmod +x scripts/setup_render.sh
+      # Run the setup script to install Node.js and build Tailwind
+      ./scripts/setup_render.sh
+      # Install Python dependencies
       pip install -r requirements.txt
+      # Run database migrations
       python scripts/db_migrate.py
     startCommand: ./scripts/start_server.sh
     envVars:
