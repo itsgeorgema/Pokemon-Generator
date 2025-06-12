@@ -27,6 +27,14 @@ mkdir -p static/generated static/samples logs data/images models
 # Run database migrations
 python scripts/db_migrate.py
 
+# Build Tailwind CSS for production
+if [ -f package.json ]; then
+  echo "Installing npm dependencies and building Tailwind CSS..."
+  npm install --omit=dev
+  npm run build:css
+fi
+
 echo "Starting Pokemon Generator on port $PORT..."
 echo "Access the application at: http://localhost:$PORT"
-exec python main.py 
+# Use gunicorn for production WSGI serving
+exec gunicorn --bind 0.0.0.0:$PORT --timeout 120 --workers 3 --access-logfile - --error-logfile - app:app 
