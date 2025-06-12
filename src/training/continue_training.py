@@ -8,7 +8,7 @@ import torch
 import argparse
 import logging
 
-# Configure logging
+# Only configure logging for training progress
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def main():
@@ -27,19 +27,18 @@ def main():
         import shutil
         backup_path = f"{args.checkpoint}.backup"
         shutil.copy2(args.checkpoint, backup_path)
-        logging.info(f"Created backup of current checkpoint at {backup_path}")
-    
+        print(f"[INFO] Created backup of current checkpoint at {backup_path}")
     if not os.path.exists(args.checkpoint):
-        logging.error(f"Checkpoint file {args.checkpoint} not found!")
+        print(f"[ERROR] Checkpoint file {args.checkpoint} not found!")
         return
     
     # Load the checkpoint to get the last epoch
     try:
         checkpoint = torch.load(args.checkpoint, map_location='cpu')
         last_epoch = checkpoint.get('epoch', 0)
-        logging.info(f"Found checkpoint at epoch {last_epoch}")
+        print(f"[INFO] Found checkpoint at epoch {last_epoch}")
     except Exception as e:
-        logging.error(f"Error loading checkpoint: {e}")
+        print(f"[ERROR] Error loading checkpoint: {e}")
         return
     
     # Calculate total epochs
@@ -58,14 +57,14 @@ def main():
     
     # Execute the command
     import subprocess
-    logging.info(f"Starting training from epoch {last_epoch + 1} for {args.epochs} more epochs (will end at epoch {total_epochs})")
-    logging.info(f"Running command: {' '.join(cmd)}")
+    print(f"[INFO] Starting training from epoch {last_epoch + 1} for {args.epochs} more epochs (will end at epoch {total_epochs})")
+    print(f"[INFO] Running command: {' '.join(cmd)}")
     
     try:
         subprocess.run(cmd, check=True)
-        logging.info(f"Training completed successfully! Reached epoch {total_epochs}")
+        print(f"[INFO] Training completed successfully! Reached epoch {total_epochs}")
     except subprocess.CalledProcessError as e:
-        logging.error(f"Training failed with exit code {e.returncode}")
+        print(f"[ERROR] Training failed with exit code {e.returncode}")
     
 if __name__ == "__main__":
     main() 

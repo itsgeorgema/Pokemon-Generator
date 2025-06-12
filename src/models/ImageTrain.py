@@ -10,12 +10,12 @@ from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-import logging
 from src.config.config import config
 from io import BytesIO
 from torchvision.utils import save_image
 
-# Configure logging
+# Only configure logging for GAN training progress, loss, and checkpointing
+import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 app_config = config[os.getenv('FLASK_ENV', 'default')]
@@ -38,9 +38,9 @@ try:
                     merged_row['image_path'] = image_path
                     merged_data.append(merged_row)
     merged_df = pd.DataFrame(merged_data)
-    logging.info(f"Successfully merged data. Found {len(merged_df)} images.")
+    print(f"[INFO] Successfully merged data. Found {len(merged_df)} images.")
 except Exception as e:
-    logging.error(f"Error merging data: {e}")
+    print(f"[ERROR] Error merging data: {e}")
     exit()
 
 #CREATE DATASET FIR FOR PYTORCH

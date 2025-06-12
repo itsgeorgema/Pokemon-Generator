@@ -16,19 +16,15 @@ export DOCKER_CONTAINER=true
 # Create necessary directories
 mkdir -p static/generated static/samples logs data/images models
 
-# Handle database connection
-if [ "$DOCKER_CONTAINER" = "true" ]; then
-  echo "Waiting for PostgreSQL..."
-  while ! nc -z db 5432; do
-    echo "PostgreSQL is unavailable - sleeping"
-    sleep 1
-  done
-  echo "PostgreSQL is up - continuing"
-else
-  echo "Running in non-Docker environment, skipping PostgreSQL wait"
-fi
+# Remove nc check for PostgreSQL (not needed for Render)
+# echo "Waiting for PostgreSQL..."
+# while ! nc -z db 5432; do
+#   echo "PostgreSQL is unavailable - sleeping"
+#   sleep 1
+# done
+# echo "PostgreSQL is up - continuing"
 
-echo "Running database migrations..."
+# Run database migrations
 python scripts/db_migrate.py
 
 echo "Starting Pokemon Generator on port $PORT..."

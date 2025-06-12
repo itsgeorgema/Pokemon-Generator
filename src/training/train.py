@@ -13,16 +13,8 @@ from src.models.ImageTrain import PokemonDataset, Generator, Discriminator
 import numpy.core.multiarray
 import torch.serialization
 
-os.makedirs('logs', exist_ok=True)
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('logs/training.log'),
-        logging.StreamHandler()
-    ]
-)
-
+# Only configure logging for training progress
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger()
 
 def train_gan(generator, discriminator, dataloader, z_dim, num_epochs=1000, 
@@ -33,7 +25,7 @@ def train_gan(generator, discriminator, dataloader, z_dim, num_epochs=1000,
     """
     # Use GPU if available, otherwise CPU
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    logging.info(f"Using device: {device}")
+    logger.info(f"Using device: {device}")
     
     generator.to(device)
     discriminator.to(device)
@@ -57,7 +49,7 @@ def train_gan(generator, discriminator, dataloader, z_dim, num_epochs=1000,
         d_real_losses, d_fake_losses = [], []
         
         if not dataloader:
-            logging.warning("Dataloader is empty. Skipping training for this epoch.")
+            logger.warning("Dataloader is empty. Skipping training for this epoch.")
             continue
         
         last_conds = None
@@ -120,7 +112,7 @@ def train_gan(generator, discriminator, dataloader, z_dim, num_epochs=1000,
         d_lr = d_opt.param_groups[0]['lr']
         
         # Log detailed information for every epoch
-        logging.info(
+        logger.info(
             f"Epoch [{epoch+1}/{num_epochs}] | "
             f"D Loss: {avg_d_loss:.4f} (Real: {avg_d_real_loss:.4f}, Fake: {avg_d_fake_loss:.4f}) | "
             f"G Loss: {avg_g_loss:.4f} | "
@@ -139,7 +131,7 @@ def train_gan(generator, discriminator, dataloader, z_dim, num_epochs=1000,
             'd_real_loss': avg_d_real_loss,
             'd_fake_loss': avg_d_fake_loss
         }, checkpoint_path)
-        logging.info(f"Saved checkpoint at epoch {epoch+1}")
+        logger.info(f"Saved checkpoint at epoch {epoch+1}")
         
         # Generate and save a sample image every 10 epochs
         if (epoch + 1) % 10 == 0 and last_conds is not None:
@@ -148,7 +140,7 @@ def train_gan(generator, discriminator, dataloader, z_dim, num_epochs=1000,
                 sample_noise = torch.randn(n, z_dim, device=device)
                 sample_conds = last_conds[0:n].to(device)
                 samples = generator(sample_noise, sample_conds)
-                logging.info(f"Generated sample images at epoch {epoch+1} (not saved to disk)")
+                logger.info(f"Generated sample images at epoch {epoch+1} (not saved to disk)")
 
 def main():
     parser = argparse.ArgumentParser(description='Train Pokemon GAN for 256x256 images')
@@ -165,11 +157,11 @@ def main():
     args = parser.parse_args()
     
     # Load data
-    logging.info(f"Loading data from {args.data_path}")
+    print(f"[INFO] Loading data from {args.data_path}")
     try:
         metadata = pd.read_csv(args.data_path)
-        logging.info(f"Loaded {len(metadata)} Pokemon from {args.data_path}")
-        logging.info(f"Columns: {metadata.columns.tolist()}")
+        print(f"[INFO] Loaded {len(metadata)} Pokemon from {args.data_path}")
+        print(f"[INFO] Columns: {metadata.columns.tolist()}")
         name_col = None
         if 'Name' in metadata.columns:
             name_col = 'Name'
@@ -177,7 +169,7 @@ def main():
             name_col = 'name'
         
         if name_col is None:
-            logging.error("No name column found in the dataset!")
+            print("[ERROR] No name column found in the dataset!")
             return
 
         merged_data = []
@@ -194,20 +186,20 @@ def main():
                             merged_data.append(merged_row)
         
         merged_df = pd.DataFrame(merged_data)
-        logging.info(f"Successfully merged data. Found {len(merged_df)} images.")
+        print(f"[INFO] Successfully merged data. Found {len(merged_df)} images.")
         
         # Create dataset and dataloader
         dataset = PokemonDataset(merged_df, image_size=args.image_size)
         dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=4, pin_memory=True)
         
         if len(dataset) == 0:
-            logging.error("No valid Pokemon images found. Please check your image folder and data paths.")
+            print("[ERROR] No valid Pokemon images found. Please check your image folder and data paths.")
             return
         
         # Get sample condition vector to determine dimension
         _, sample_condition = dataset[0]
         condition_dim = sample_condition.shape[0]
-        logging.info(f"Condition dimension: {condition_dim}")
+        print(f"[INFO] Condition dimension: {condition_dim}")
         
         # Initialize models for 256x256 output
         g = Generator(z_dim=args.z_dim, condition_dim=condition_dim)
@@ -222,7 +214,7 @@ def main():
         # Load checkpoint if resume flag is set
         if args.resume and os.path.exists(args.checkpoint):
             try:
-                logging.info(f"Loading checkpoint from {args.checkpoint}")
+                print(f"[INFO] Loading checkpoint from {args.checkpoint}")
                 torch.serialization.add_safe_globals([numpy.core.multiarray.scalar])
                 checkpoint = torch.load(args.checkpoint, map_location=torch.device('cpu'), weights_only=False)
                 g.load_state_dict(checkpoint['generator_state_dict'], strict=False)
@@ -230,14 +222,14 @@ def main():
                 g_opt.load_state_dict(checkpoint['g_optimizer_state_dict'])
                 d_opt.load_state_dict(checkpoint['d_optimizer_state_dict'])
                 start_epoch = checkpoint['epoch'] + 1
-                logging.info(f"Resuming training from epoch {start_epoch}")
+                print(f"[INFO] Resuming training from epoch {start_epoch}")
             except (KeyError, TypeError) as e:
-                logging.error(f"Checkpoint file is corrupted or has missing keys: {e}. Starting from scratch.")
+                print(f"[ERROR] Checkpoint file is corrupted or has missing keys: {e}. Starting from scratch.")
                 g_opt = optim.Adam(g.parameters(), lr=2e-4, betas=(0.5, 0.999))
                 d_opt = optim.Adam(d.parameters(), lr=2e-4, betas=(0.5, 0.999))
                 start_epoch = 0
         else:
-            logging.info("Starting training from scratch for 256x256 images")
+            print("[INFO] Starting training from scratch for 256x256 images")
         
         # Start training
         train_gan(g, d, dataloader, args.z_dim, 
@@ -249,7 +241,7 @@ def main():
                   samples_dir=args.samples_dir)
         
     except Exception as e:
-        logging.error(f"Error during training: {e}")
+        print(f"[ERROR] Error during training: {e}")
         raise
 
 if __name__ == "__main__":
