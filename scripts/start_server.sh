@@ -30,8 +30,10 @@ python scripts/db_migrate.py
 # Build Tailwind CSS for production
 if [ -f package.json ]; then
   echo "Installing npm dependencies and building Tailwind CSS..."
-  npm install --omit=dev
-  npm run build:css
+  if [ ! -d node_modules ]; then
+    npm install --omit=dev
+  fi
+  npx tailwindcss -i ./static/src/tailwind.css -o ./static/dist/tailwind.css --minify
 fi
 
 echo "Starting Pokemon Generator on port $PORT..."
