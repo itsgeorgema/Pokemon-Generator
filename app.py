@@ -15,6 +15,7 @@ from src.config.config import config, Config
 from sqlalchemy import text
 import uuid
 import numpy as np
+import gc  # For explicit garbage collection
 
 
 load_dotenv()
@@ -29,15 +30,24 @@ try:
 except EnvironmentError as e:
     raise
 
-# Handle Render's postgres:// prefix if present
+# Handle database URL format for SQLAlchemy
 if app.config['SQLALCHEMY_DATABASE_URI'].startswith('postgres://'):
     app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace('postgres://', 'postgresql://', 1)
 
+# Handle fly.io deployment with Supabase
+if os.getenv('FLY_APP_NAME'):
+    # Use Supabase connection string from environment variable
+    if os.getenv('DATABASE_URL'):
+        app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+    print(f"[INFO] Running on fly.io as {os.getenv('FLY_APP_NAME')}")
+    
+# Handle Docker container environment (for both local and fly.io)
 if os.getenv('DOCKER_CONTAINER') == 'true':
     if 'localhost' in app.config['SQLALCHEMY_DATABASE_URI']:
         app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace('localhost', 'db')
     db_url = os.getenv('DATABASE_URL')
-    app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+    if db_url:  # Only override if DATABASE_URL is set
+        app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 
 # Initialize database
 try:
@@ -202,18 +212,15 @@ def cleanup_expired_images():
                 
                 # Delete expired records from the database
                 try:
-                    # Use SQLAlchemy to delete expired records with explicit comparison
-                    expired_records = GeneratedImage.query.filter(
-                        text("expires_at < :cutoff_time")
-                    ).params(cutoff_time=cutoff_time).all()
-                    
-                    for record in expired_records:
-                        db.session.delete(record)
-                    
+                    # Use more efficient bulk delete directly with SQL
+                    db.session.execute(
+                        text("DELETE FROM generated_image WHERE expires_at < :cutoff_time")
+                        .bindparams(cutoff_time=cutoff_time)
+                    )
                     db.session.commit()
                     
-                    if expired_records:
-                        pass
+                    # Force garbage collection after cleanup
+                    gc.collect()
                 except Exception as db_error:
                     pass
             
@@ -400,9 +407,11 @@ def not_found_error(error):
 @app.errorhandler(500)
 def internal_error(error):
     db.session.rollback()
-    pass
+    gc.collect()  # Force garbage collection on error
     return render_template('500.html'), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    port = int(os.environ.get('PORT', 5001))
+    host = os.environ.get('HOST', '0.0.0.0')
+    # Reduced threadpool size to save memory
+    app.run(host=host, port=port, threaded=True, processes=1)

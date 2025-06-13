@@ -1,0 +1,56 @@
+# flyctl launch added from .gitignore
+# Environment variables
+**/.env
+
+# Python
+**/__pycache__
+**/*.py[cod]
+**/*.class
+**/venv
+**/.venv
+**/*.so
+**/.Python
+**/build
+**/develop-eggs
+**/dist
+**/downloads
+**/eggs
+**/.eggs
+**/lib
+**/lib64
+**/parts
+**/sdist
+**/var
+**/wheels
+**/*.egg-info
+**/.installed.cfg
+**/*.egg
+
+# Logs
+**/logs
+**/*.log
+
+# Node
+**/node_modules
+
+# Database
+**/*.db
+**/*.sqlite3
+
+# Docker
+**/.docker
+
+# IDE files
+**/.idea
+**/.vscode
+**/*.swp
+**/*.swo
+
+# OS specific
+**/.DS_Store
+**/Thumbs.db
+
+# flyctl launch added from venv/.gitignore
+# Created by venv; see https://docs.python.org/3/library/venv.html
+venv/**/*
+fly.toml

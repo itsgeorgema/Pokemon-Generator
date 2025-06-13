@@ -12,11 +12,13 @@ chmod +x scripts/create_fallback_css.sh
 export FLASK_ENV=${FLASK_ENV:-production}
 export FLASK_APP=${FLASK_APP:-app.py}
 export PORT=${PORT:-5001}
+export HOST=${HOST:-0.0.0.0}
 export DOCKER_CONTAINER=true
 
 mkdir -p static/generated static/samples logs data/images models
 
-# Remove nc check for PostgreSQL (not needed for Render)
+# Check database connection if needed
+# Uncomment this for local development:
 # echo "Waiting for PostgreSQL..."
 # while ! nc -z db 5432; do
 #   echo "PostgreSQL is unavailable - sleeping"

@@ -1,0 +1,34 @@
+# fly.toml app configuration file generated for original-pokemon-generator-project on 2025-06-13T05:51:17-07:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'original-pokemon-generator-project'
+primary_region = 'lax'
+
+[build]
+  dockerfile = 'Dockerfile'
+
+[env]
+  APP_VERSION = '1.2.0'
+  CHECKPOINT_PATH = 'models/checkpoint.pth'
+  DOCKER_CONTAINER = 'true'
+  FLASK_APP = 'app.py'
+  FLASK_DEBUG = '0'
+  FLASK_ENV = 'production'
+  MODEL_VERSION = '2.0.0'
+  POKEMON_DATA_PATH = 'data/Pokemon_stats.csv'
+  PORT = '5001'
+
+[http_service]
+  internal_port = 5001
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  cpu_kind = 'performance'
+  cpus = 1
+  memory_mb = 2048

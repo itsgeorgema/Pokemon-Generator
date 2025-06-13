@@ -1,16 +1,15 @@
 # Pokemon Generator
 
-A web application that generates unique Pokemon images using a conditional GAN (Generative Adversarial Network) based on user-selected types and other parameters.
+A web application that generates custom Pokemon based on user-selected types and other parameters using a conditional GAN (Generative Adversarial Network) trained on Pokemon images and a RandomForestRegresser trained on stats.
+
+Deployed at: https://original-pokemon-generator-project.fly.dev/
 
 ## NOTE:
-A recent commit in this project encompasses a large amount of refactored and added code. This was the result of a very concentrated effort densely packed into 4 days to restructure and optimize the codebase in order to deploy it to a live website. I anticipated a very small amount of changes and configurations, but I got very into the refactoring that I made many, many changes in the process that I didn't commit until the end of my spree. While I typically favor smaller, more frequent, and atomic commits for easier code review and tracking, I chose to consolidate this particular refactor into a single commit once the entire module was stable and tested to push to a live website.
-
-I've learned a lot from this experience about managing larger code changes, and moving forward, I will definitely make sure to break down complex refactoring efforts into incremental commits that better reflect the development process, for my own sanity in tracking changes at the end.
+A recent commit in this project encompasses a large amount of refactored and added code. This was the result of a very concentrated effort densely packed into 4 days to restructure and optimize the codebase in order to deploy it to a live website. I anticipated a very small amount of changes and configurations, but I got very into the refactoring that I made many, many changes in the process that I didn't commit until the end of my spree. While I typically favor smaller, more frequent commits for easier code review and tracking, I chose to consolidate this particular refactor into a single commit once the entire module was stable and tested to push to a live website.
 
 ## Features
 
-- Generate unique Pokemon images based on selected types
-- Customize generation with legendary status, height, weight, and generation parameters
+- Generate custom Pokemon images based on type, height, weight, generation, and legendary status
 - View predicted stats based on Pokemon types
 - Responsive web interface
 - Docker support for easy deployment
@@ -34,7 +33,7 @@ I've learned a lot from this experience about managing larger code changes, and 
 ### Deployment & Infrastructure
 - **Docker & Docker Compose**: Containerization
 - **Gunicorn**: WSGI HTTP Server
-- **Render**: Cloud deployment platform
+- **Fly.io**: Cloud deployment platform
 
 ## GAN Architecture
 
@@ -188,7 +187,7 @@ FLASK_ENV=development
 FLASK_APP=app.py
 FLASK_DEBUG=1
 SECRET_KEY=your_secure_secret_key
-PORT=8080
+PORT=5001
 
 # PostgreSQL database settings
 POSTGRES_USER=postgres
@@ -201,6 +200,7 @@ APP_VERSION=1.2.0
 MODEL_VERSION=2.0.0
 CHECKPOINT_PATH=models/checkpoint.pth
 POKEMON_DATA_PATH=data/Pokemon_stats.csv
+```
 
 ## Manual Installation
 
@@ -240,6 +240,7 @@ The application uses PostgreSQL. The schema is created from a `.template` file u
 
 ## Future Improvements
 
+- **Train For More Epochs**: My model is not making very accurate images because it is underfitting the data since I trained it only for around 115 epochs. This is largely in part due to the sheer size of the dataset and the significant noise associated with images. Training for more epochs would allow the model to better understand the diversity and complexity of example images to find patterns and create more accurate images.
 - **Better GAN Architectures**: Experiment with more advanced GAN variants (e.g., StyleGAN, BigGAN) for improved image quality.
 - **User Customization**: Gather data on more features/traits to allow users to further customize generated Pokemon or make more specific (e.g., color palette, body shape, accessories).
 - **Interactive Training**: Enable users to provide feedback on generated images to guide future training (reinforcement learning or active learning).
