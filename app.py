@@ -20,7 +20,10 @@ import gc  # For explicit garbage collection
 
 load_dotenv()
 
-app = Flask(__name__)
+# Initialize Flask app with explicit static folder path
+app = Flask(__name__, 
+           static_folder='static',
+           static_url_path='/static')
 app_config = config[os.getenv('FLASK_ENV', 'default')]
 app.config.from_object(app_config)
 
@@ -399,6 +402,15 @@ def serve_public_file(filename):
     except Exception as e:
         pass
         return jsonify({"error": f"Error serving file: {str(e)}"}), 500
+
+@app.route('/favicon.ico')
+def favicon():
+    """Serve the favicon.ico file from the public directory"""
+    try:
+        return send_from_directory('public/favicon', 'pokeball.png', mimetype='image/png')
+    except Exception as e:
+        pass
+        return jsonify({"error": "Favicon not found"}), 404
 
 @app.errorhandler(404)
 def not_found_error(error):

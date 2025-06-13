@@ -11,6 +11,8 @@ services:
       - ./models:/app/models
       - ./logs:/app/logs
       - ./.env:/app/.env
+      - ./public:/app/public
+      # Don't mount the static/dist directory to ensure container uses the built CSS
     environment:
       - FLASK_ENV=${FLASK_ENV}
       - FLASK_APP=${FLASK_APP}

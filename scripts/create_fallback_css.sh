@@ -11,10 +11,44 @@ FALLBACK_FILE="${DIST_DIR}/tailwind.css"
 mkdir -p "${DIST_DIR}"
 
 # Check if the file already exists and has content
-if [ -f "${FALLBACK_FILE}" ] && [ "$(stat -c%s "${FALLBACK_FILE}" 2>/dev/null || stat -f%z "${FALLBACK_FILE}")" -gt "1000" ]; then
-  echo "Tailwind CSS file already exists and appears to have content. Keeping existing file."
+if [ -f "${FALLBACK_FILE}" ] && [ "$(stat -c%s "${FALLBACK_FILE}" 2>/dev/null || stat -f%z "${FALLBACK_FILE}")" -gt "10000" ]; then
+  echo "Tailwind CSS file already exists and appears to have sufficient content. Keeping existing file."
   exit 0
 fi
+
+# Try multiple build methods in sequence, stopping at first success
+echo "Attempting to build Tailwind using various methods..."
+
+# Method 1: npm run build:css
+if command -v npm > /dev/null; then
+  echo "Attempting to build with npm run build:css..."
+  if npm run build:css 2>/dev/null; then
+    echo "Successfully built Tailwind CSS with npm run build:css."
+    if [ -f "${FALLBACK_FILE}" ] && [ "$(stat -c%s "${FALLBACK_FILE}" 2>/dev/null || stat -f%z "${FALLBACK_FILE}")" -gt "1000" ]; then
+      exit 0
+    fi
+  fi
+fi
+
+# Method 2: npx tailwindcss
+if command -v npx > /dev/null; then
+  echo "Attempting to build with npx tailwindcss..."
+  if npx tailwindcss -i ./static/src/tailwind.css -o "${FALLBACK_FILE}" --minify 2>/dev/null; then
+    echo "Successfully built Tailwind CSS with npx tailwindcss."
+    exit 0
+  fi
+fi
+
+# Method 3: direct node execution
+if command -v node > /dev/null; then
+  echo "Attempting to build with Node.js directly..."
+  if node -e "try { require('tailwindcss'); require('postcss'); require('autoprefixer'); const fs=require('fs'); console.log('Dependencies loaded'); const config=require('./tailwind.config.js'); const postcss=require('postcss'); postcss([require('tailwindcss')(config), require('autoprefixer')]).process('@tailwind base; @tailwind components; @tailwind utilities;', {from:undefined}).then(result => fs.writeFileSync('${FALLBACK_FILE}', result.css)); } catch(e) { console.error(e); process.exit(1); }"; then
+    echo "Successfully built minimal Tailwind CSS with Node.js."
+    exit 0
+  fi
+fi
+
+echo "All build methods failed. Using predefined minimal CSS..."
 
 # Create a minimal Tailwind CSS file
 cat > "${FALLBACK_FILE}" << 'EOL'
