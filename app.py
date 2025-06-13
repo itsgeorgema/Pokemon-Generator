@@ -158,25 +158,71 @@ try:
 except Exception as e:
     raise
 
-def random_ability():
+def get_type_based_abilities():
+    """Create a mapping of types to their associated abilities based on the dataset."""
     try:
-        if 'Abilities' in metadata.columns:
-            all_abilities = [ability for sublist in metadata['Abilities'] for ability in sublist]
-        elif 'abilities' in metadata.columns:
-            all_abilities = [ability for sublist in metadata['abilities'] for ability in sublist]
-        else:
-            # If no abilities column is found, return a default list
-            return random.choice(['Overgrow', 'Blaze', 'Torrent', 'Intimidate', 'Levitate', 
-                                 'Static', 'Synchronize', 'Sand Veil', 'Immunity'])
+        type_to_abilities = {}
         
-        ability_counts = Counter(all_abilities)
-        common_abilities = {ability: count for ability, count in ability_counts.items() if count >= 2}
-        abilities_list = list(common_abilities.keys())
-        weights = list(common_abilities.values())
-        return random.choices(abilities_list, weights=weights, k=1)[0]
+        # Load the data from pokeapi which has abilities information
+        pokeapi_data_path = os.path.join(os.path.dirname(app.config['POKEMON_DATA_PATH']), 'pokemon_data_pokeapi.csv')
+        if os.path.exists(pokeapi_data_path):
+            pokeapi_data = pd.read_csv(pokeapi_data_path)
+            
+            if 'Abilities' in pokeapi_data.columns and 'Type1' in pokeapi_data.columns:
+                for _, row in pokeapi_data.iterrows():
+                    type1 = row['Type1']
+                    type2 = row['Type2'] if pd.notna(row.get('Type2', None)) else None
+                    
+                    # Extract abilities (they're stored as a string like "Ability1, Ability2")
+                    abilities_str = row['Abilities']
+                    if pd.isna(abilities_str):
+                        continue
+                        
+                    abilities = [ability.strip() for ability in abilities_str.split(',')]
+                    
+                    # Add abilities to the first type
+                    if type1 not in type_to_abilities:
+                        type_to_abilities[type1] = set()
+                    type_to_abilities[type1].update(abilities)
+                    
+                    # Add abilities to the second type if it exists
+                    if type2 and pd.notna(type2):
+                        if type2 not in type_to_abilities:
+                            type_to_abilities[type2] = set()
+                        type_to_abilities[type2].update(abilities)
+        
+        # Convert sets to lists for easier random selection
+        for type_name in type_to_abilities:
+            type_to_abilities[type_name] = list(type_to_abilities[type_name])
+            
+        return type_to_abilities
     except Exception as e:
-        return random.choice(['Overgrow', 'Blaze', 'Torrent', 'Intimidate', 'Levitate', 
-                             'Static', 'Synchronize', 'Sand Veil', 'Immunity'])
+        print(f"Error creating type-to-abilities mapping: {str(e)}")
+        return {}
+
+# Create the type-to-abilities mapping at startup
+try:
+    type_to_abilities = get_type_based_abilities()
+except Exception as e:
+    type_to_abilities = {}
+
+def random_ability(type1, type2=None):
+    """Return an ability that matches the given Pokémon type(s)."""
+    try:
+        possible_abilities = []
+        
+        # Get abilities associated with the primary type
+        if type1 in type_to_abilities and type_to_abilities[type1]:
+            possible_abilities.extend(type_to_abilities[type1])
+            
+        # Get abilities associated with the secondary type
+        if type2 and type2 in type_to_abilities and type_to_abilities[type2]:
+            possible_abilities.extend(type_to_abilities[type2])
+        return random.choice(possible_abilities)
+        
+    except Exception as e:
+        print(f"Error generating ability: {str(e)}")
+        return random.choice(['Adaptability', 'Keen Eye', 'Intimidate', 'Synchronize'])
 
 def predict_stats(type1, type2):
     try:
@@ -359,7 +405,7 @@ def generate():
             "type1": type1,
             "type2": type2,
             "name": name,
-            "ability": random_ability(),
+            "ability": random_ability(type1, type2),
             "stats": stats,
             "ivs": ivs,
             "image_url": f"/image/{filename}?t={int(time.time())}"
