@@ -1,4 +1,3 @@
-# flyctl launch added from .gitignore
 # Environment variables
 **/.env
 
@@ -26,9 +25,13 @@
 **/.installed.cfg
 **/*.egg
 
-# Logs
-**/logs
-**/*.log
+# Test files
+**/.pytest_cache
+**/htmlcov
+**/.coverage
+**/coverage.xml
+**/pytest-report.xml
+**/coverage
 
 # Node
 **/node_modules

@@ -1,5 +1,6 @@
 # Environment variables
 .env
+.env.*
 
 # Python
 __pycache__/
@@ -24,10 +25,21 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+pytest-report.xml
 
 # Logs
-logs/
+logs/*
+!logs/.gitkeep
 *.log
+
+# Generated files
+static/generated/*
+!static/generated/.gitkeep
+static/dist/tailwind.css
 
 # Node
 node_modules/

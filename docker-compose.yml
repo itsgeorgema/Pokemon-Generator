@@ -1,6 +1,8 @@
 services:
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "5001:5001"
     volumes:
@@ -14,13 +16,11 @@ services:
       - FLASK_APP=${FLASK_APP}
       - FLASK_DEBUG=${FLASK_DEBUG}
       - SECRET_KEY=${SECRET_KEY}
-      - PYTHONPATH=/app
       - DATABASE_URL=${DATABASE_URL}
       - CHECKPOINT_PATH=${CHECKPOINT_PATH}
       - POKEMON_DATA_PATH=${POKEMON_DATA_PATH}
       - APP_VERSION=${APP_VERSION}
       - MODEL_VERSION=${MODEL_VERSION}
-      - DOCKER_CONTAINER=true
       - PORT=5001
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}

@@ -8,9 +8,7 @@ import sys
 import socket
 from dotenv import load_dotenv
 
-
-
-# Load any other environment variables from .env
+# Load any environment variables from .env
 load_dotenv()
 
 def get_ip_address():
@@ -22,7 +20,7 @@ def get_ip_address():
         ip = s.getsockname()[0]
         s.close()
         return ip
-    except:
+    except Exception:
         return "localhost"
 
 if __name__ == '__main__':
