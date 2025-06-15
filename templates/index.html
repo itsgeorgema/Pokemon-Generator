@@ -133,37 +133,37 @@
                             </div>
                             <div class="stats-chart flex justify-between h-52 my-5 p-2 bg-white bg-opacity-20 rounded-lg shadow-inner">
                                 <div class="stat-bar w-1/6 h-44 flex flex-col items-center justify-end">
-                                    <span class="stat-value font-bold w-full text-center bg-white bg-opacity-90 rounded-sm" id="iv-hp"></span>
+                                    <span class="stat-value font-bold w-full text-center bg-white bg-opacity-90 rounded-sm" id="stat-hp"></span>
                                     <div class="stat-fill hp-bar w-4/5 mx-auto transition-all duration-700" id="bar-hp" style="height: 0;"></div>
                                     <span class="stat-label text-xs w-full text-center">HP</span>
                                 </div>
                                 <div class="stat-bar w-1/6 h-44 flex flex-col items-center justify-end">
-                                    <span class="stat-value font-bold w-full text-center bg-white bg-opacity-90 rounded-sm" id="iv-attack"></span>
+                                    <span class="stat-value font-bold w-full text-center bg-white bg-opacity-90 rounded-sm" id="stat-attack"></span>
                                     <div class="stat-fill attack-bar w-4/5 mx-auto transition-all duration-700" id="bar-attack" style="height: 0;"></div>
                                     <span class="stat-label text-xs w-full text-center">Attack</span>
                                 </div>
                                 <div class="stat-bar w-1/6 h-44 flex flex-col items-center justify-end">
-                                    <span class="stat-value font-bold w-full text-center bg-white bg-opacity-90 rounded-sm" id="iv-defense"></span>
+                                    <span class="stat-value font-bold w-full text-center bg-white bg-opacity-90 rounded-sm" id="stat-defense"></span>
                                     <div class="stat-fill defense-bar w-4/5 mx-auto transition-all duration-700" id="bar-defense" style="height: 0;"></div>
                                     <span class="stat-label text-xs w-full text-center">Defense</span>
                                 </div>
                                 <div class="stat-bar w-1/6 h-44 flex flex-col items-center justify-end">
-                                    <span class="stat-value font-bold w-full text-center bg-white bg-opacity-90 rounded-sm" id="iv-spatk"></span>
+                                    <span class="stat-value font-bold w-full text-center bg-white bg-opacity-90 rounded-sm" id="stat-spatk"></span>
                                     <div class="stat-fill spatk-bar w-4/5 mx-auto transition-all duration-700" id="bar-spatk" style="height: 0;"></div>
                                     <span class="stat-label text-xs w-full text-center">Sp. Atk</span>
                                 </div>
                                 <div class="stat-bar w-1/6 h-44 flex flex-col items-center justify-end">
-                                    <span class="stat-value font-bold w-full text-center bg-white bg-opacity-90 rounded-sm" id="iv-spdef"></span>
+                                    <span class="stat-value font-bold w-full text-center bg-white bg-opacity-90 rounded-sm" id="stat-spdef"></span>
                                     <div class="stat-fill spdef-bar w-4/5 mx-auto transition-all duration-700" id="bar-spdef" style="height: 0;"></div>
                                     <span class="stat-label text-xs w-full text-center">Sp. Def</span>
                                 </div>
                                 <div class="stat-bar w-1/6 h-44 flex flex-col items-center justify-end">
-                                    <span class="stat-value font-bold w-full text-center bg-white bg-opacity-90 rounded-sm" id="iv-speed"></span>
+                                    <span class="stat-value font-bold w-full text-center bg-white bg-opacity-90 rounded-sm" id="stat-speed"></span>
                                     <div class="stat-fill speed-bar w-4/5 mx-auto transition-all duration-700" id="bar-speed" style="height: 0;"></div>
                                     <span class="stat-label text-xs w-full text-center">Speed</span>
                                 </div>
                             </div>
-                            <div class="total-stats text-lg font-bold mt-2 text-center">Total IVs: <span id="totalIVs">0</span></div>
+                            <div class="total-stats text-lg font-bold mt-2 text-center">Total Stats: <span id="totalStats">0</span></div>
                         </div>
                         <div class="md:w-1/2 w-full flex items-center justify-center">
                             <img class="pokemon-image w-full min-h-[350px] object-contain rounded-lg mt-5 shadow" src="" alt="Generated Pokemon">
@@ -237,8 +237,8 @@
                     }
                     
                     // Update stats with bar heights
-                    const ivs = data.ivs;
-                    const maxIV = 31;
+                    const stats = data.stats;
+                    const maxStat = 255; // Maximum stat value in Pokemon
                     const maxBarHeight = 150;
                     const barRadiusBuffer = 2; // px buffer to preserve border-radius
                     const statValueGap = 30; // px, height of stat-value box + margin
@@ -252,12 +252,12 @@
                         sp_def: 'spdef-bar',
                         speed: 'speed-bar'
                     };
-                    let totalIVs = 0;
+                    let totalStats = 0;
                     statKeys.forEach(key => {
-                        document.getElementById('iv-' + key.replace('_', '')).textContent = ivs[key];
+                        document.getElementById('stat-' + key.replace('_', '')).textContent = stats[key];
                         const bar = document.getElementById('bar-' + key.replace('_', ''));
-                        let barHeight = (ivs[key] / maxIV) * (maxBarHeight - barRadiusBuffer - statValueGap);
-                        if (ivs[key] > 0 && barHeight < minBarHeight) barHeight = minBarHeight;
+                        let barHeight = (stats[key] / maxStat) * (maxBarHeight - barRadiusBuffer - statValueGap);
+                        if (stats[key] > 0 && barHeight < minBarHeight) barHeight = minBarHeight;
                         // Animation: reset to 0, force reflow, then animate to final height
                         bar.style.transition = 'none';
                         bar.style.height = '0px';
@@ -268,9 +268,9 @@
                         }, 10);
                         bar.className = 'stat-fill';
                         bar.classList.add(barClasses[key]);
-                        totalIVs += ivs[key];
+                        totalStats += stats[key];
                     });
-                    document.getElementById('totalIVs').textContent = totalIVs;
+                    document.getElementById('totalStats').textContent = totalStats;
                     document.querySelector('.ability').textContent = data.ability;
                     document.getElementById('resultContainer').style.display = 'block';
                 } catch (error) {

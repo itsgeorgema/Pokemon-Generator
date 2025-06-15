@@ -107,7 +107,7 @@ The GAN is trained using a standard adversarial process with several optimizatio
 python -m src.training.train --epochs 1000 --batch_size 16 --image_size 256
 
 # Resume training from a checkpoint
-python -m src.training.continue_training --epochs 100 --checkpoint models/checkpoint.pth
+python -m src.training.train --epochs 1000 --batch_size 16 --image_size 256 --resume
 ```
 
 ## Stat Prediction

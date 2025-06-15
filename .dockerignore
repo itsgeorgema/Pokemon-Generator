@@ -1,3 +1,9 @@
+# Git related
+**/.git
+**/.gitignore
+**/.gitattributes
+**/.git-lfs
+
 # Environment variables
 **/.env
 

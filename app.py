@@ -337,16 +337,7 @@ def index():
                                'MODEL_VERSION': app.config.get('MODEL_VERSION', '2.0.0')
                            })
 
-def generate_ivs():
-    # Generate a random IV (0-31) for each stat
-    return {
-        'hp': random.randint(0, 31),
-        'attack': random.randint(0, 31),
-        'defense': random.randint(0, 31),
-        'sp_atk': random.randint(0, 31),
-        'sp_def': random.randint(0, 31),
-        'speed': random.randint(0, 31)
-    }
+
 
 @app.route('/generate', methods=['POST'])
 def generate():
@@ -373,9 +364,6 @@ def generate():
             return jsonify({"error": f"Invalid secondary type: {type2}"}), 400
 
         stats = predict_stats(type1, type2)
-        ivs = generate_ivs()
-        for stat in stats:
-            stats[stat] += ivs[stat]
 
         try:
             cleanup_all_images()
@@ -407,7 +395,6 @@ def generate():
             "name": name,
             "ability": random_ability(type1, type2),
             "stats": stats,
-            "ivs": ivs,
             "image_url": f"/image/{filename}?t={int(time.time())}"
         })
 
