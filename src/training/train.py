@@ -215,8 +215,38 @@ def main():
         if args.resume and os.path.exists(args.checkpoint):
             try:
                 print(f"[INFO] Loading checkpoint from {args.checkpoint}")
-                torch.serialization.add_safe_globals([numpy.core.multiarray.scalar])
-                checkpoint = torch.load(args.checkpoint, map_location=torch.device('cpu'), weights_only=False)
+                try:
+                    # First try with weights_only=False (for PyTorch 2.6+ compatibility)
+                    checkpoint = torch.load(args.checkpoint, map_location=torch.device('cpu'), weights_only=False)
+                except Exception as e1:
+                    try:
+                        # Second try with pickle_module=torch.serialization.pickle
+                        import pickle
+                        checkpoint = torch.load(args.checkpoint, map_location=torch.device('cpu'), 
+                                               pickle_module=pickle, weights_only=False)
+                    except Exception as e2:
+                        try:
+                            # Third try with allowlisting
+                            torch.serialization.add_safe_globals([numpy.core.multiarray.scalar])
+                            checkpoint = torch.load(args.checkpoint, map_location=torch.device('cpu'), weights_only=False)
+                        except Exception as e3:
+                            # Fourth try with pickle4 compatibility for "invalid load key, 'v'" error
+                            import pickle
+                            import io
+                            
+                            # Custom unpickler class for compatibility with old formats
+                            class LegacyUnpickler(pickle.Unpickler):
+                                def find_class(self, module, name):
+                                    if module == 'collections' and name == 'OrderedDict':
+                                        return dict
+                                    return super().find_class(module, name)
+                            
+                            # Load the file manually and use our custom unpickler
+                            with open(args.checkpoint, 'rb') as f:
+                                checkpoint = LegacyUnpickler(f).load()
+                                
+                            print("[INFO] Successfully loaded checkpoint with custom legacy unpickler")
+                
                 g.load_state_dict(checkpoint['generator_state_dict'], strict=False)
                 d.load_state_dict(checkpoint['discriminator_state_dict'], strict=False)
                 g_opt.load_state_dict(checkpoint['g_optimizer_state_dict'])

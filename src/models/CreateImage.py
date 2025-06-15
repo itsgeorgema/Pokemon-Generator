@@ -202,8 +202,26 @@ def generate_and_save_image(type1, type2, height, weight, generation, legendary,
                         torch.serialization.add_safe_globals([numpy.core.multiarray.scalar])
                         checkpoint = torch.load(checkpoint_path, map_location=torch.device('cpu'), weights_only=False)
                     except Exception as e3:
-                        print(f"Checkpoint loading failed after multiple attempts: {e3}")
-                        raise e3
+                        try:
+                            # Fourth try with pickle4 compatibility for "invalid load key, 'v'" error
+                            import pickle
+                            import io
+                            
+                            # Custom unpickler class for compatibility with old formats
+                            class LegacyUnpickler(pickle.Unpickler):
+                                def find_class(self, module, name):
+                                    if module == 'collections' and name == 'OrderedDict':
+                                        return dict
+                                    return super().find_class(module, name)
+                            
+                            # Load the file manually and use our custom unpickler
+                            with open(checkpoint_path, 'rb') as f:
+                                checkpoint = LegacyUnpickler(f).load()
+                                
+                            print("Successfully loaded checkpoint with custom legacy unpickler")
+                        except Exception as e4:
+                            print(f"Checkpoint loading failed after multiple attempts: {e4}")
+                            raise e4
             if "generator_state_dict" not in checkpoint:
                 print("Invalid checkpoint format. Using fallback image.")
                 fallback_img = create_fallback_image(type1, type2)
