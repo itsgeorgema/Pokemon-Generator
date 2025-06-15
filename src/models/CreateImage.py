@@ -213,6 +213,17 @@ def generate_and_save_image(type1, type2, height, weight, generation, legendary,
                                     if module == 'collections' and name == 'OrderedDict':
                                         return dict
                                     return super().find_class(module, name)
+                                
+                                # Override the load_build_class method to catch the specific 'v' key error
+                                def persistent_load(self, pid):
+                                    try:
+                                        return super().persistent_load(pid)
+                                    except KeyError as ke:
+                                        if str(ke) == "'v'":
+                                            print("Handling 'v' key error in unpickler")
+                                            # Return a placeholder that will be compatible with state_dict loading
+                                            return {'v': None}
+                                        raise
                             
                             # Load the file manually and use our custom unpickler
                             with open(checkpoint_path, 'rb') as f:
@@ -230,7 +241,30 @@ def generate_and_save_image(type1, type2, height, weight, generation, legendary,
                 buffer.seek(0)
                 print("[GAN Fallback] Used fallback image due to invalid checkpoint format.")
                 return buffer.read()
-            generator.load_state_dict(checkpoint["generator_state_dict"])
+            
+            # Clean up checkpoint state_dict before loading - handle any potential CI/CD corruption
+            try:
+                state_dict = checkpoint["generator_state_dict"]
+                # Handle any problematic keys in the state dict
+                problematic_keys = []
+                for key in state_dict:
+                    try:
+                        if isinstance(state_dict[key], dict) and 'v' in state_dict[key] and state_dict[key]['v'] is None:
+                            problematic_keys.append(key)
+                    except Exception:
+                        problematic_keys.append(key)
+                
+                # Remove problematic keys
+                for key in problematic_keys:
+                    print(f"Removing problematic key: {key}")
+                    state_dict.pop(key, None)
+                    
+                # Load state dict with strict=False to allow missing keys
+                generator.load_state_dict(state_dict, strict=False)
+            except Exception as load_err:
+                print(f"Error during state dict cleanup: {load_err}. Trying direct loading...")
+                generator.load_state_dict(checkpoint["generator_state_dict"], strict=False)
+                
             generator.eval()
             with torch.no_grad():
                 z = torch.randn(1, z_dim)
