@@ -313,7 +313,8 @@ def main():
 
     if os.path.exists(CHECKPOINT_PATH):
         try:
-            checkpoint = torch.load(CHECKPOINT_PATH)
+            # Use weights_only=False for PyTorch 2.6+ compatibility
+            checkpoint = torch.load(CHECKPOINT_PATH, weights_only=False)
             g.load_state_dict(checkpoint['generator_state_dict'])
             d.load_state_dict(checkpoint['discriminator_state_dict'])
             g_opt.load_state_dict(checkpoint['g_optimizer_state_dict'])

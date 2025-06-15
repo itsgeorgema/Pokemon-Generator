@@ -138,8 +138,13 @@ def generate_and_save_image(type1, type2, height, weight, generation, legendary,
         type1_col = 'Type 1' if 'Type 1' in metadata.columns else 'Type1'
         type2_col = 'Type 2' if 'Type 2' in metadata.columns else 'Type2'
         types = sorted(list(set(metadata[type1_col].dropna().tolist() + metadata[type2_col].dropna().tolist())))
-        max_height = metadata['Height'].max() if 'Height' in metadata.columns else 20.0
-        max_weight = metadata['Weight'].max() if 'Weight' in metadata.columns else 1000.0
+        
+        # More robust column name handling
+        height_col = next((col for col in ['Height', 'Height (m)'] if col in metadata.columns), None)
+        weight_col = next((col for col in ['Weight', 'Weight (kg)'] if col in metadata.columns), None)
+        
+        max_height = metadata[height_col].max() if height_col else 20.0
+        max_weight = metadata[weight_col].max() if weight_col else 1000.0
         max_gen = metadata['Generation'].max() if 'Generation' in metadata.columns else 8
     except Exception as e:
         print(f"Warning: Using default type list: {e}")
@@ -175,22 +180,27 @@ def generate_and_save_image(type1, type2, height, weight, generation, legendary,
         try:
             # Fix for PyTorch version incompatibility issues
             try:
-                # First try with pickle_module=torch.serialization.pickle
-                import pickle
+                # First try with weights_only=False (for PyTorch 2.6+ compatibility)
                 checkpoint = torch.load(
                     checkpoint_path, 
                     map_location=torch.device('cpu'),
-                    pickle_module=pickle
+                    weights_only=False
                 )
             except Exception as e1:
                 try:
-                    # Second try with map_location and no weights_only
-                    checkpoint = torch.load(checkpoint_path, map_location=torch.device('cpu'))
+                    # Second try with pickle_module=torch.serialization.pickle
+                    import pickle
+                    checkpoint = torch.load(
+                        checkpoint_path, 
+                        map_location=torch.device('cpu'),
+                        pickle_module=pickle,
+                        weights_only=False
+                    )
                 except Exception as e2:
                     try:
                         # Third try with allowlisting
                         torch.serialization.add_safe_globals([numpy.core.multiarray.scalar])
-                        checkpoint = torch.load(checkpoint_path, map_location=torch.device('cpu'))
+                        checkpoint = torch.load(checkpoint_path, map_location=torch.device('cpu'), weights_only=False)
                     except Exception as e3:
                         print(f"Checkpoint loading failed after multiple attempts: {e3}")
                         raise e3
