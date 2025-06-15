@@ -5,7 +5,7 @@ A web application that generates custom Pokemon based on user-selected types and
 Deployed at: https://original-pokemon-generator-project.fly.dev/
 
 ## NOTES:
-- When accessing the website, it may take some time for it to load because it needs to cold start and spin up. Since Fly.io operates with virtual machines and a pay-as-you-go pricing structure, I have configured machines to automatically spin down to save money. They will automatically spin up upon a new request, but it may take a little bit of time (3-15 seconds)
+- When accessing the website, it may take some time for it to load because it needs to cold start and spin up. Since Fly.io operates with virtual machines and a pay-as-you-go pricing structure, I have configured machines to automatically spin down to save money. They will automatically spin up upon a new request, but it may take a little bit of time (~15 seconds)
 
 - A commit in this project encompasses a large amount of refactored and added code. This was the result of a very concentrated effort densely packed into 4 days to restructure and optimize the codebase in order to deploy it to a live website. I anticipated a very small amount of changes and configurations, but I got very into the refactoring that I made many, many changes in the process that I didn't commit until the end of my spree. While I typically favor smaller, more frequent commits for easier code review and tracking, I chose to consolidate this particular refactor into a single commit once the entire module was stable and tested to push to a live website.
 
