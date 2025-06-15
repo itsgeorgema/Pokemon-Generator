@@ -1,5 +1,6 @@
 # Flask and web server
 Flask>=2.3.2
+Flask-Cors>=4.0.0
 gunicorn>=21.2.0
 
 # Database

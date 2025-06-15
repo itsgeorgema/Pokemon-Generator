@@ -173,19 +173,27 @@ def generate_and_save_image(type1, type2, height, weight, generation, legendary,
             return buffer.read()
         # Load checkpoint and generate image
         try:
-            # Fix for PyTorch 2.6+ checkpoint loading
+            # Fix for PyTorch version incompatibility issues
             try:
-                checkpoint = torch.load(checkpoint_path, map_location=torch.device('cpu'), weights_only=False)
-            except TypeError:
-                checkpoint = torch.load(checkpoint_path, map_location=torch.device('cpu'))
-            except Exception as e:
-                # Try allowlisting numpy._core.multiarray.scalar if needed
+                # First try with pickle_module=torch.serialization.pickle
+                import pickle
+                checkpoint = torch.load(
+                    checkpoint_path, 
+                    map_location=torch.device('cpu'),
+                    pickle_module=pickle
+                )
+            except Exception as e1:
                 try:
-                    torch.serialization.add_safe_globals([numpy.core.multiarray.scalar])
-                    checkpoint = torch.load(checkpoint_path, map_location=torch.device('cpu'), weights_only=False)
+                    # Second try with map_location and no weights_only
+                    checkpoint = torch.load(checkpoint_path, map_location=torch.device('cpu'))
                 except Exception as e2:
-                    print(f"Checkpoint loading failed even after allowlisting: {e2}")
-                    raise e
+                    try:
+                        # Third try with allowlisting
+                        torch.serialization.add_safe_globals([numpy.core.multiarray.scalar])
+                        checkpoint = torch.load(checkpoint_path, map_location=torch.device('cpu'))
+                    except Exception as e3:
+                        print(f"Checkpoint loading failed after multiple attempts: {e3}")
+                        raise e3
             if "generator_state_dict" not in checkpoint:
                 print("Invalid checkpoint format. Using fallback image.")
                 fallback_img = create_fallback_image(type1, type2)

@@ -8,6 +8,7 @@ import random
 from src.models.CreateImage import generate_and_save_image
 from dotenv import load_dotenv
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
 from datetime import datetime, timedelta, timezone
 import threading
 import time
@@ -26,6 +27,9 @@ app = Flask(__name__,
            static_url_path='/static')
 app_config = config[os.getenv('FLASK_ENV', 'default')]
 app.config.from_object(app_config)
+
+# Initialize CORS for all routes
+CORS(app)
 
 # Validate environment variables
 try:
@@ -240,10 +244,22 @@ def predict_stats(type1, type2):
             if len(type2_idx) > 0:
                 type2_encoded = int(type2_idx[0])
         
+        # Add randomness to ensure stats change on each generation
+        # Use the type combination as a base, but add randomness
         stats = {}
         for stat, model in stat_models.items():
-            predicted = model.predict([[type1_encoded, type2_encoded]])[0]
-            stats[stat.lower().replace(' ', '_').replace('.', '')] = round(predicted)
+            # Get base prediction from model
+            base_predicted = model.predict([[type1_encoded, type2_encoded]])[0]
+            
+            # Add random variation (±15% of base value)
+            variation = base_predicted * 0.15
+            random_factor = random.uniform(-variation, variation)
+            final_value = base_predicted + random_factor
+            
+            # Ensure values stay within reasonable bounds (min 10, max 255)
+            final_value = max(10, min(255, final_value))
+            
+            stats[stat.lower().replace(' ', '_').replace('.', '')] = round(final_value)
             
         return stats
     except Exception as e:
