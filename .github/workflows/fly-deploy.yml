@@ -17,7 +17,30 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          lfs: true  # Enable Git LFS support
+          
+      - name: Verify model checkpoint exists and is valid
+        run: |
+          echo "Checking for model checkpoint file..."
+          if [ ! -f "models/checkpoint.pth" ]; then
+            echo "ERROR: Model checkpoint file not found!"
+            exit 1
+          fi
+          
+          # Check file size (should be > 100MB for a real checkpoint)
+          file_size=$(stat -c%s "models/checkpoint.pth" 2>/dev/null || stat -f%z "models/checkpoint.pth")
+          echo "Checkpoint file size: $file_size bytes"
+          
+          if [ "$file_size" -lt 100000000 ]; then
+            echo "ERROR: Checkpoint file too small ($file_size bytes). This indicates Git LFS failure."
+            echo "File content preview:"
+            head -5 "models/checkpoint.pth"
+            exit 1
+          fi
+          
+          echo "Model checkpoint verified successfully"
         
       - name: Setup flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
