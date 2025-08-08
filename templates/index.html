@@ -22,7 +22,19 @@
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap');
-            html, body {
+            
+            /* Scrollbar removal for all browsers and OS */
+            html {
+                scrollbar-width: none; /* Firefox */
+                -ms-overflow-style: none; /* Internet Explorer 10+ */
+                overflow-x: hidden;
+            }
+            
+            html::-webkit-scrollbar {
+                display: none; /* Chrome, Safari, Opera */
+            }
+            
+            body {
                 height: 100%;
                 margin: 0;
                 padding: 0;
@@ -31,12 +43,27 @@
                 background: url('/public/background1.jpg') no-repeat center center fixed;
                 background-size: cover;
                 background-color: transparent !important;
-            }
-            body {
                 font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                 position: relative;
                 overflow-x: hidden;
+                scrollbar-width: none; /* Firefox */
+                -ms-overflow-style: none; /* Internet Explorer 10+ */
             }
+            
+            body::-webkit-scrollbar {
+                display: none; /* Chrome, Safari, Opera */
+            }
+            
+            /* Ensure all scrollable elements also have hidden scrollbars */
+            * {
+                scrollbar-width: none; /* Firefox */
+                -ms-overflow-style: none; /* Internet Explorer 10+ */
+            }
+            
+            *::-webkit-scrollbar {
+                display: none; /* Chrome, Safari, Opera */
+            }
+            
             .hp-bar { background: #D32F2F !important; }     
             .attack-bar { background: #111111 !important; }    
             .defense-bar { background: #D32F2F !important; }   
