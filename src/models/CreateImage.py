@@ -9,26 +9,34 @@ from io import BytesIO
 import torch.serialization
 import numpy.core.multiarray
 
-try:
-    metadata = pd.read_csv("data/Pokemon_stats.csv")
-    type1_col = 'Type 1' if 'Type 1' in metadata.columns else 'Type1'
-    type2_col = 'Type 2' if 'Type 2' in metadata.columns else 'Type2'
-    height_col = 'Height' if 'Height' in metadata.columns else 'Height (m)'
-    weight_col = 'Weight' if 'Weight' in metadata.columns else 'Weight (kg)'
-    gen_col = 'Generation' if 'Generation' in metadata.columns else 'Generation'
-    
-    types = sorted(list(set(metadata[type1_col].dropna().tolist() + metadata[type2_col].dropna().tolist())))
-    max_height = metadata[height_col].max() if height_col in metadata.columns else 20.0
-    max_weight = metadata[weight_col].max() if weight_col in metadata.columns else 1000.0
-    max_gen = metadata[gen_col].max() if gen_col in metadata.columns else 8
-except Exception as e:
-    print(f"Warning: Error loading metadata: {e}. Using default values.")
-    types = ['Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting', 
-            'Poison', 'Ground', 'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost', 
-            'Dragon', 'Dark', 'Steel', 'Fairy']
-    max_height = 20.0
-    max_weight = 1000.0
-    max_gen = 8
+def _load_metadata_defaults():
+    """
+    Lazily load metadata used for normalization.
+    This avoids doing pandas I/O and preprocessing at module import time,
+    which helps reduce application startup latency.
+    """
+    try:
+        metadata = pd.read_csv("data/Pokemon_stats.csv")
+        type1_col = 'Type 1' if 'Type 1' in metadata.columns else 'Type1'
+        type2_col = 'Type 2' if 'Type 2' in metadata.columns else 'Type2'
+        height_col = 'Height' if 'Height' in metadata.columns else 'Height (m)'
+        weight_col = 'Weight' if 'Weight' in metadata.columns else 'Weight (kg)'
+        gen_col = 'Generation' if 'Generation' in metadata.columns else 'Generation'
+
+        types = sorted(list(set(metadata[type1_col].dropna().tolist() + metadata[type2_col].dropna().tolist())))
+        max_height = metadata[height_col].max() if height_col in metadata.columns else 20.0
+        max_weight = metadata[weight_col].max() if weight_col in metadata.columns else 1000.0
+        max_gen = metadata[gen_col].max() if gen_col in metadata.columns else 8
+    except Exception as e:
+        print(f"Warning: Error loading metadata: {e}. Using default values.")
+        types = ['Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting',
+                 'Poison', 'Ground', 'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost',
+                 'Dragon', 'Dark', 'Steel', 'Fairy']
+        max_height = 20.0
+        max_weight = 1000.0
+        max_gen = 8
+
+    return types, max_height, max_weight, max_gen
 
 def one_hot_type(t, types):
     vector = [0] * len(types)

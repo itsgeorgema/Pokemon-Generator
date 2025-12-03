@@ -30,5 +30,5 @@ primary_region = 'lax'
 
 [[vm]]
   cpu_kind = 'performance'
-  cpus = 8
+  cpus = 4
   memory_mb = 16384

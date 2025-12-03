@@ -83,6 +83,11 @@ RUN if [ -f package-lock.json ]; then \
 # Copy application code
 COPY . .
 
+# Precompute and cache Pokemon stat models at build time so machines
+# don't have to train them on every boot, following the pattern from:
+# https://fly.io/phoenix-files/speed-up-your-boot-times-with-this-one-dockerfile-trick/
+RUN python scripts/precompute_stat_models.py
+
 # Make scripts executable
 RUN chmod +x scripts/start_server.sh scripts/create_fallback_css.sh
 

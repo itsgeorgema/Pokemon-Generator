@@ -2,10 +2,8 @@ import os
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestRegressor
-from collections import Counter
 from flask import Flask, render_template, request, jsonify, send_from_directory, make_response
 import random
-from src.models.CreateImage import generate_and_save_image
 from dotenv import load_dotenv
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
@@ -17,6 +15,7 @@ from sqlalchemy import text
 import uuid
 import numpy as np
 import gc  # For explicit garbage collection
+import pickle
 
 
 load_dotenv()
@@ -90,26 +89,56 @@ class GeneratedImage(db.Model):
 with app.app_context():
     db.create_all()
 
+# Global flags to track model readiness
+models_ready = False
+models_ready_error = None
+
+
 # Load and preprocess Pokemon data
 def load_pokemon_data():
+    """
+    Load Pokemon metadata, types, label encoder, and pre-trained stat models.
+    To keep startup fast on fly.io, this first tries to load a cached version
+    created at Docker build time, and only falls back to training on boot if
+    the cache is missing.
+    """
+    cache_path = app.config.get('STAT_MODEL_CACHE_PATH', 'models/stat_models.pkl')
+
+    # Fast path: load from cache if available
+    if os.path.exists(cache_path):
+        try:
+            with open(cache_path, 'rb') as f:
+                cached = pickle.load(f)
+            return (
+                cached['metadata'],
+                cached['types'],
+                cached['type_encoder'],
+                cached['models'],
+            )
+        except Exception as e:
+            # If cache is corrupted or unreadable, log and fall back to on-boot training
+            print(f"[WARN] Failed to load cached stat models from {cache_path}: {e}. "
+                  f"Falling back to training at startup.")
+
+    # Slow path: perform training work at startup (local dev / first boot)
     try:
         metadata = pd.read_csv(app.config['POKEMON_DATA_PATH'])
-        
+
         type1_col = 'Type 1' if 'Type 1' in metadata.columns else 'Type1'
         type2_col = 'Type 2' if 'Type 2' in metadata.columns else 'Type2'
-        
+
         types = sorted(list(set(metadata[type1_col].dropna().tolist() + metadata[type2_col].dropna().tolist())))
-        
+
         type_encoder = LabelEncoder()
         metadata['Type1_encoded'] = type_encoder.fit_transform(metadata[type1_col])
-        
+
         metadata['Type2_filled'] = metadata[type2_col].fillna('None')
         all_types = list(type_encoder.classes_) + ['None']
         type_encoder.classes_ = np.array(all_types)
         metadata['Type2_encoded'] = type_encoder.transform(metadata['Type2_filled'])
-        
+
         stats_data = pd.read_csv(app.config['POKEMON_DATA_PATH'])
-        
+
         models = {}
         for stat in ['HP', 'Attack', 'Defense', 'Sp. Atk', 'Sp. Def', 'Speed']:
             # Create a mapping from Type 1/Type 2 to the stats
@@ -121,37 +150,54 @@ def load_pokemon_data():
                 if key not in type_to_stat:
                     type_to_stat[key] = []
                 type_to_stat[key].append(row[stat])
-            
+
             # For each type combination, take the average stat value
             for key, values in type_to_stat.items():
                 type_to_stat[key] = sum(values) / len(values)
-            
+
             # Train a model on the encoded types
             model = RandomForestRegressor(n_estimators=100, random_state=42)
-            
+
             # Create training data from the type_to_stat mapping
             X_train = []
             y_train = []
             for (type1, type2), stat_value in type_to_stat.items():
                 type1_encoded = 0
                 type2_encoded = 0
-                
+
                 if type1 in type_encoder.classes_:
                     type1_idx = np.where(type_encoder.classes_ == type1)[0]
                     if len(type1_idx) > 0:
                         type1_encoded = int(type1_idx[0])
-                
+
                 if type2 in type_encoder.classes_:
                     type2_idx = np.where(type_encoder.classes_ == type2)[0]
                     if len(type2_idx) > 0:
                         type2_encoded = int(type2_idx[0])
-                
+
                 X_train.append([type1_encoded, type2_encoded])
                 y_train.append(stat_value)
-            
+
             model.fit(X_train, y_train)
             models[stat] = model
-            
+
+        # Best-effort: cache the trained objects so subsequent boots are fast
+        try:
+            os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+            with open(cache_path, 'wb') as f:
+                pickle.dump(
+                    {
+                        'metadata': metadata,
+                        'types': types,
+                        'type_encoder': type_encoder,
+                        'models': models,
+                    },
+                    f,
+                )
+            print(f"[INFO] Cached stat models to {cache_path}")
+        except Exception as cache_err:
+            print(f"[WARN] Failed to cache stat models to {cache_path}: {cache_err}")
+
         return metadata, types, type_encoder, models
     except Exception as e:
         raise
@@ -161,6 +207,44 @@ try:
     metadata, types, type_encoder, stat_models = load_pokemon_data()
 except Exception as e:
     raise
+
+
+def warmup_models():
+    """
+    Perform a one-time warmup of heavy ML dependencies so that subsequent
+    /generate requests are fast and fully initialized.
+
+    This runs in a background thread after the Flask app starts, following the
+    \"do heavy work outside the request path\" pattern similar to the Fly.io
+    Docker boot-time optimization idea:
+    https://fly.io/phoenix-files/speed-up-your-boot-times-with-this-one-dockerfile-trick/
+    """
+    global models_ready, models_ready_error  # noqa: PLW0603
+
+    try:
+        # Import the heavy GAN / PyTorch code
+        from src.models.CreateImage import generate_and_save_image  # noqa: WPS433
+
+        # Perform a small dummy generation to force checkpoint + dependencies to load.
+        # We don't persist this image anywhere; it's just for warmup.
+        _ = generate_and_save_image(
+            type1=types[0] if types else "Fire",
+            type2=None,
+            height=1.0,
+            weight=10.0,
+            generation=1,
+            legendary=False,
+            checkpoint_path=app.config["CHECKPOINT_PATH"],
+            data_path=app.config["POKEMON_DATA_PATH"],
+        )
+
+        models_ready = True
+        models_ready_error = None
+        print("[INFO] Model warmup complete. Generation endpoint is now available.")
+    except Exception as e:
+        models_ready = False
+        models_ready_error = str(e)
+        print(f"[ERROR] Model warmup failed: {e}")
 
 def get_type_based_abilities():
     """Create a mapping of types to their associated abilities based on the dataset."""
@@ -327,6 +411,11 @@ if not app.config.get('TESTING'):
     cleanup_thread = threading.Thread(target=cleanup_expired_images, daemon=True)
     cleanup_thread.start()
 
+    # Kick off asynchronous model warmup so that heavy ML dependencies are
+    # fully loaded before users can generate Pokemon.
+    warmup_thread = threading.Thread(target=warmup_models, daemon=True)
+    warmup_thread.start()
+
 def cleanup_all_images():
     """Delete all previously generated images and database records"""
     try:
@@ -358,6 +447,19 @@ def index():
 @app.route('/generate', methods=['POST'])
 def generate():
     try:
+        # Ensure models and heavy dependencies have finished initializing
+        if not models_ready:
+            # Surface warmup failure details if any, but avoid leaking internals.
+            if models_ready_error:
+                return jsonify({
+                    "error": "Model initialization failed. Please try again later.",
+                    "details": models_ready_error
+                }), 500
+
+            return jsonify({
+                "error": "Models are still loading. Please wait a moment and try again."
+            }), 503
+
         data = request.get_json()
         if not data:
             return jsonify({"error": "No data provided"}), 400
@@ -382,6 +484,9 @@ def generate():
         stats = predict_stats(type1, type2)
 
         try:
+            # Lazy import the heavy GAN / PyTorch model so it doesn't slow app startup.
+            from src.models.CreateImage import generate_and_save_image  # noqa: WPS433
+
             cleanup_all_images()
             # Generate image in memory
             image_bytes = generate_and_save_image(
